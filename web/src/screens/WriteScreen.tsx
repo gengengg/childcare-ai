@@ -44,6 +44,11 @@ import {
 } from '@/lib/styleSamples';
 import { generateDailyRecordWithAI } from '@/lib/ai';
 import { dataUrlToBase64, resizeToDataUrl } from '@/lib/image';
+import {
+  computeShowClass,
+  getDefaultClassName,
+  getShowClassSetting,
+} from '@/lib/settings';
 
 type WriteMode = 'personal' | 'common';
 
@@ -127,6 +132,7 @@ export function WriteScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
   const [loadedFromClass, setLoadedFromClass] = useState(false);
+  const [showClass, setShowClass] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -134,10 +140,11 @@ export function WriteScreen() {
       setChildren(list);
       if (list.length > 0) {
         setSelectedChildId((prev) => prev || list[0].id);
-        setCommonClassName((prev) => prev || list[0].className);
+        setCommonClassName((prev) => prev || getDefaultClassName(list));
       }
       setTone(await getTone());
       setLength(await getLength());
+      setShowClass(computeShowClass(await getShowClassSetting(), list));
     })();
   }, []);
 
@@ -239,7 +246,7 @@ export function WriteScreen() {
       toast.show('아이 이름을 선택하거나 입력해주세요.', 'error');
       return;
     }
-    if (mode === 'common' && !commonClassName.trim()) {
+    if (mode === 'common' && showClass && !commonClassName.trim()) {
       toast.show('반 이름을 선택하거나 입력해주세요.', 'error');
       return;
     }
@@ -319,13 +326,16 @@ export function WriteScreen() {
       savingChildName = targetName;
       savingClassName = child?.className ?? '';
     } else {
-      if (!commonClassName.trim()) {
+      const cn = commonClassName.trim();
+      if (showClass && !cn) {
         toast.show('반 이름을 확인해주세요.', 'error');
         return;
       }
-      savingChildId = `common-${commonClassName.trim()}-${selectedDate}`;
-      savingChildName = `${commonClassName.trim()} 공통`;
-      savingClassName = commonClassName.trim();
+      savingChildId = cn
+        ? `common-${cn}-${selectedDate}`
+        : `common-${selectedDate}`;
+      savingChildName = cn ? `${cn} 공통` : '공통 알림장';
+      savingClassName = cn;
     }
     await saveDailyRecord({
       childId: savingChildId,
@@ -444,7 +454,7 @@ export function WriteScreen() {
             </button>
           )}
         </Card>
-      ) : (
+      ) : showClass ? (
         <Card className="mb-4" hint="어느 반의 공통 알림장인가요?">
           <input
             className="field-input mb-3"
@@ -466,6 +476,13 @@ export function WriteScreen() {
             </div>
           )}
           <p className="text-[12px] text-subtle mt-3 leading-relaxed">
+            공통 알림장은 아이 이름 없이 반 전체를 대상으로 작성돼요.
+            같은 활동을 아이들에게 동일하게 보낼 때 편해요.
+          </p>
+        </Card>
+      ) : (
+        <Card className="mb-4" hint="공통 알림장">
+          <p className="text-[12px] text-subtle leading-relaxed">
             공통 알림장은 아이 이름 없이 반 전체를 대상으로 작성돼요.
             같은 활동을 아이들에게 동일하게 보낼 때 편해요.
           </p>

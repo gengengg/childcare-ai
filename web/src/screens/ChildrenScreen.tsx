@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { useToast } from '@/components/Toast';
 import { PlusIcon, SmileIcon, TrashIcon } from '@/components/icons';
 import { addChild, deleteChild, getChildren, updateChild, type Child } from '@/lib/children';
+import { computeShowClass, getShowClassSetting } from '@/lib/settings';
 
 const AGES = [0, 1, 2, 3, 4, 5];
 
@@ -15,8 +16,14 @@ export function ChildrenScreen() {
   const [className, setClassName] = useState('');
   const [age, setAge] = useState(2);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showClass, setShowClass] = useState(false);
 
-  const load = async () => setChildren(await getChildren());
+  const load = async () => {
+    const list = await getChildren();
+    setChildren(list);
+    const setting = await getShowClassSetting();
+    setShowClass(computeShowClass(setting, list));
+  };
   useEffect(() => {
     load();
   }, []);
@@ -33,15 +40,19 @@ export function ChildrenScreen() {
       toast.show('아이 이름을 입력해주세요.', 'error');
       return;
     }
-    if (!trimmedClass) {
+    if (showClass && !trimmedClass) {
       toast.show('반 이름을 입력해주세요.', 'error');
       return;
     }
+    // 반 이름을 숨겨둔 상태에서 편집하는 경우 기존 값 유지
+    const finalClass = showClass
+      ? trimmedClass
+      : (editingId ? (children.find((c) => c.id === editingId)?.className ?? '') : '');
     if (editingId) {
-      await updateChild({ id: editingId, name: trimmedName, className: trimmedClass, age });
+      await updateChild({ id: editingId, name: trimmedName, className: finalClass, age });
       toast.show('수정했어요.', 'success');
     } else {
-      await addChild(trimmedName, trimmedClass, age);
+      await addChild(trimmedName, finalClass, age);
       toast.show('추가했어요.', 'success');
     }
     resetForm();
@@ -83,12 +94,14 @@ export function ChildrenScreen() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <input
-            className="field-input"
-            placeholder="반 이름"
-            value={className}
-            onChange={(e) => setClassName(e.target.value)}
-          />
+          {showClass && (
+            <input
+              className="field-input"
+              placeholder="반 이름"
+              value={className}
+              onChange={(e) => setClassName(e.target.value)}
+            />
+          )}
           <div>
             <div className="text-[13px] font-semibold text-clay-700 mb-2">만 나이</div>
             <div className="flex flex-wrap gap-2">
@@ -129,7 +142,7 @@ export function ChildrenScreen() {
                 <button onClick={() => handleEdit(c)} className="flex-1 text-left">
                   <div className="text-[15px] font-bold text-ink">{c.name}</div>
                   <div className="text-[12px] text-subtle">
-                    {c.className} · 만 {c.age}세
+                    {showClass && c.className ? `${c.className} · ` : ''}만 {c.age}세
                   </div>
                 </button>
                 <button

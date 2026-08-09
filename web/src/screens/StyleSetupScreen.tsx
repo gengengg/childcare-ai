@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/Card';
 import { Header } from '@/components/Header';
+import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
 import { CameraIcon, PlusIcon, SparkleIcon, TrashIcon } from '@/components/icons';
 import { analyzeStyleSamples, type StyleSampleInput } from '@/lib/ai';
-import { getChildren } from '@/lib/children';
+import { getChildren, type Child } from '@/lib/children';
 import { markOnboardingSeen } from '@/lib/onboarding';
 import {
   MAX_STYLE_SAMPLES,
@@ -18,6 +19,12 @@ import {
   setStyleSamples,
   type StyleSample,
 } from '@/lib/styleSamples';
+import {
+  computeShowClass,
+  getShowClassSetting,
+  setShowClassSetting,
+  type ShowClassSetting,
+} from '@/lib/settings';
 import { dataUrlToBase64, resizeToDataUrl } from '@/lib/image';
 
 export function StyleSetupScreen() {
@@ -28,6 +35,8 @@ export function StyleSetupScreen() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [fromSettings, setFromSettings] = useState(false);
   const [emojiOn, setEmojiOn] = useState(true);
+  const [classSetting, setClassSetting] = useState<ShowClassSetting>('auto');
+  const [children, setChildren] = useState<Child[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -38,8 +47,17 @@ export function StyleSetupScreen() {
         setFromSettings(true);
       }
       setEmojiOn(await getEmojiEnabled());
+      setClassSetting(await getShowClassSetting());
+      setChildren(await getChildren());
     })();
   }, []);
+
+  const effectiveShowClass = computeShowClass(classSetting, children);
+
+  const handleClassSetting = async (v: ShowClassSetting) => {
+    setClassSetting(v);
+    await setShowClassSetting(v);
+  };
 
   const toggleEmoji = async () => {
     const next = !emojiOn;
@@ -163,6 +181,28 @@ export function StyleSetupScreen() {
             />
           </button>
         </div>
+      </Card>
+
+      <Card className="mb-4" hint="반 이름 표시">
+        <p className="text-[12px] text-subtle mb-3">
+          한 반만 담당하시면 반 이름을 감출 수 있어요. 여러 반을 담당하시면 반 이름을 표시해 알림장을 구분하세요.
+        </p>
+        <Segmented
+          value={classSetting}
+          onChange={handleClassSetting}
+          options={[
+            { value: 'auto', label: '자동' },
+            { value: 'off', label: '숨김' },
+            { value: 'on', label: '표시' },
+          ]}
+        />
+        <p className="text-[11px] text-subtle mt-2">
+          {classSetting === 'auto'
+            ? `현재: ${effectiveShowClass ? '표시 (등록된 반이 2개 이상)' : '숨김 (등록된 반이 하나 이하)'}`
+            : classSetting === 'off'
+            ? '현재: 반 이름 입력 화면이 감춰져요.'
+            : '현재: 아이·활동·공통 알림장에 반 이름을 항상 표시해요.'}
+        </p>
       </Card>
 
       <Card className="mb-4" hint="알림장 텍스트로 추가">

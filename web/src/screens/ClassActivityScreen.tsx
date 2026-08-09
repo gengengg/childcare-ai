@@ -14,6 +14,11 @@ import {
   type Activity,
 } from '@/lib/dailyRecords';
 import { getClassActivity, saveClassActivity } from '@/lib/classActivities';
+import {
+  computeShowClass,
+  getDefaultClassName,
+  getShowClassSetting,
+} from '@/lib/settings';
 
 export function ClassActivityScreen() {
   const [params] = useSearchParams();
@@ -27,12 +32,18 @@ export function ClassActivityScreen() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([makeEmptyActivity()]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showClass, setShowClass] = useState(false);
 
   useEffect(() => {
     (async () => {
       const list = await getChildren();
       setChildren(list);
-      if (!selectedClass && list.length > 0) setSelectedClass(list[0].className);
+      const setting = await getShowClassSetting();
+      const shouldShow = computeShowClass(setting, list);
+      setShowClass(shouldShow);
+      if (!selectedClass) {
+        setSelectedClass(getDefaultClassName(list));
+      }
     })();
   }, []);
 
@@ -66,7 +77,7 @@ export function ClassActivityScreen() {
     setActivities((prev) => (prev.length > 1 ? prev.filter((a) => a.id !== id) : prev));
 
   const handleSave = async () => {
-    if (!selectedClass) {
+    if (showClass && !selectedClass) {
       toast.show('반을 먼저 선택해주세요.', 'error');
       return;
     }
@@ -80,7 +91,10 @@ export function ClassActivityScreen() {
       activities,
     });
     setIsLoaded(true);
-    toast.show(`${selectedClass} 공통 활동을 저장했어요.`, 'success');
+    toast.show(
+      selectedClass ? `${selectedClass} 공통 활동을 저장했어요.` : '공통 활동을 저장했어요.',
+      'success'
+    );
   };
 
   return (
@@ -92,28 +106,30 @@ export function ClassActivityScreen() {
         subtitle="반마다 한 번만 입력하면 아이별 알림장에서 자동으로 불러와요"
       />
 
-      <Card className="mb-4" hint="반 선택">
-        {classNames.length === 0 ? (
-          <p className="text-subtle text-[14px]">등록된 반이 없어요. 아이 관리에서 먼저 아이를 추가해주세요.</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {classNames.map((cn) => (
-              <Chip
-                key={cn}
-                active={selectedClass === cn}
-                onClick={() => setSelectedClass(cn)}
-              >
-                {cn}
-              </Chip>
-            ))}
-          </div>
-        )}
-        {selectedClass && (
-          <p className="text-[12px] text-subtle mt-3">
-            {selectedClass} 아이 {childCountInClass}명
-          </p>
-        )}
-      </Card>
+      {showClass && (
+        <Card className="mb-4" hint="반 선택">
+          {classNames.length === 0 ? (
+            <p className="text-subtle text-[14px]">등록된 반이 없어요. 아이 관리에서 먼저 아이를 추가해주세요.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {classNames.map((cn) => (
+                <Chip
+                  key={cn}
+                  active={selectedClass === cn}
+                  onClick={() => setSelectedClass(cn)}
+                >
+                  {cn}
+                </Chip>
+              ))}
+            </div>
+          )}
+          {selectedClass && (
+            <p className="text-[12px] text-subtle mt-3">
+              {selectedClass} 아이 {childCountInClass}명
+            </p>
+          )}
+        </Card>
+      )}
 
       <Card className="mb-4" hint="날짜">
         <div className="flex items-center gap-2">

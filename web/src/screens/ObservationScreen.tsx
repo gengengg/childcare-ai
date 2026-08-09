@@ -105,13 +105,18 @@ export function ObservationScreen() {
     }
 
     const allRecords = await getAllDailyRecords();
-    const filtered = allRecords.filter(
-      (r) =>
-        r.childId === selectedChild.id &&
-        r.date >= startDate &&
-        r.date <= endDate &&
-        r.teacherFinal.trim()
-    );
+    const childClass = (selectedChild.className || '').trim();
+    const filtered = allRecords.filter((r) => {
+      if (r.date < startDate || r.date > endDate) return false;
+      if (!r.teacherFinal.trim()) return false;
+      // 개인 알림장
+      if (r.childId === selectedChild.id) return true;
+      // 공통 알림장: 같은 반이면 포함 (반 이름이 비어있는 경우도 매칭)
+      if (r.childId.startsWith('common-')) {
+        return (r.className || '').trim() === childClass;
+      }
+      return false;
+    });
     if (filtered.length === 0) {
       toast.show('선택한 기간에 저장된 보육일지가 없어요.', 'error');
       return;
@@ -128,7 +133,9 @@ export function ObservationScreen() {
         childObservationNotes: notes,
         records: filtered.map((r) => ({
           date: r.date,
-          teacherFinal: r.teacherFinal,
+          teacherFinal: r.childId.startsWith('common-')
+            ? `(우리 반 공통 알림장) ${r.teacherFinal}`
+            : r.teacherFinal,
           activities: r.activities ?? [],
           mealNote: r.mealNote,
           napNote: r.napNote,
