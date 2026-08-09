@@ -8,6 +8,7 @@ import { useToast } from '@/components/Toast';
 import { SettingsIcon, SparkleIcon, TrashIcon } from '@/components/icons';
 import { getChildren, type Child } from '@/lib/children';
 import { resetOnboarding } from '@/lib/onboarding';
+import { resetTour } from '@/lib/tour';
 import {
   computeShowClass,
   getShowClassSetting,
@@ -116,6 +117,11 @@ function GeneralTab() {
     toast.show('온보딩을 다시 볼 수 있어요.', 'success');
     navigate('/onboarding');
   };
+  const handleResetTour = async () => {
+    await resetTour();
+    toast.show('튜토리얼을 다시 볼 수 있어요.', 'success');
+    navigate('/');
+  };
 
   return (
     <>
@@ -144,13 +150,18 @@ function GeneralTab() {
         </p>
       </Card>
 
-      <Card className="mb-4" hint="온보딩">
+      <Card className="mb-4" hint="안내">
         <p className="text-[12px] text-subtle mb-3">
-          첫 실행 안내를 다시 보고 싶으시면 눌러주세요.
+          첫 실행 안내와 튜토리얼을 언제든 다시 볼 수 있어요.
         </p>
-        <button onClick={handleResetOnboarding} className="btn-ghost w-full">
-          온보딩 다시 보기
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={handleResetTour} className="btn-primary py-3">
+            튜토리얼 다시 보기
+          </button>
+          <button onClick={handleResetOnboarding} className="btn-ghost py-3">
+            온보딩 다시 보기
+          </button>
+        </div>
       </Card>
     </>
   );

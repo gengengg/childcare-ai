@@ -49,6 +49,8 @@ import {
   getDefaultClassName,
   getShowClassSetting,
 } from '@/lib/settings';
+import { Walkthrough, type TourStep } from '@/components/Walkthrough';
+import { hasSeenTour, markTourSeen } from '@/lib/tour';
 
 type WriteMode = 'personal' | 'common';
 
@@ -75,10 +77,16 @@ type ShortcutProps = {
   onClick: () => void;
 };
 
-function Shortcut({ icon, label, onClick }: ShortcutProps) {
+function Shortcut({
+  icon,
+  label,
+  onClick,
+  tourKey,
+}: ShortcutProps & { tourKey?: string }) {
   return (
     <button
       onClick={onClick}
+      data-tour={tourKey}
       className="flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl
         bg-surface border border-cream-200 text-clay-700
         active:scale-[0.98] active:bg-cream-100 transition"
@@ -90,6 +98,36 @@ function Shortcut({ icon, label, onClick }: ShortcutProps) {
     </button>
   );
 }
+
+const TOUR_STEPS: TourStep[] = [
+  {
+    selector: '[data-tour="write-card"]',
+    title: '여기서 알림장을 써요',
+    description: '활동을 적고 사진을 넣으면 AI가 초안을 만들어 드려요.',
+  },
+  {
+    selector: '[data-tour="mode-toggle"]',
+    title: '여러 아이에게 한꺼번에 보낼 땐',
+    description:
+      "'공통 알림장'을 골라 반 전체용 알림장을 한 번에 작성해요.",
+  },
+  {
+    selector: '[data-tour="class-activity"]',
+    title: '반 활동은 미리 저장',
+    description:
+      '여기서 반 활동을 저장해두면 개인 알림장에 자동으로 담겨요.',
+  },
+  {
+    selector: '[data-tour="observation"]',
+    title: '관찰일지도 여기서',
+    description: '저장된 알림장으로 관찰일지를 AI가 정리해줘요.',
+  },
+  {
+    selector: '[data-tour="settings"]',
+    title: '세부 설정은 여기',
+    description: '다크 모드, 문체, 이모지 등을 설정에서 관리해요.',
+  },
+];
 
 export function WriteScreen() {
   const navigate = useNavigate();
@@ -132,6 +170,20 @@ export function WriteScreen() {
   const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
   const [loadedFromClass, setLoadedFromClass] = useState(false);
   const [showClass, setShowClass] = useState(false);
+  const [tourOn, setTourOn] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      if (!(await hasSeenTour())) {
+        setTimeout(() => setTourOn(true), 500);
+      }
+    })();
+  }, []);
+
+  const finishTour = async () => {
+    setTourOn(false);
+    await markTourSeen();
+  };
 
   useEffect(() => {
     (async () => {
@@ -375,6 +427,7 @@ export function WriteScreen() {
           <button
             onClick={() => navigate('/settings')}
             aria-label="설정"
+            data-tour="settings"
             className="w-10 h-10 rounded-full flex items-center justify-center text-clay-700
               bg-cream-100 active:bg-cream-200 transition"
           >
@@ -389,11 +442,13 @@ export function WriteScreen() {
           icon={<GridIcon size={20} />}
           label="반 공통 활동"
           onClick={() => navigate('/class-activity')}
+          tourKey="class-activity"
         />
         <Shortcut
           icon={<NoteIcon size={20} />}
           label="관찰일지"
           onClick={() => navigate('/observation')}
+          tourKey="observation"
         />
         <Shortcut
           icon={<CalendarIcon size={20} />}
@@ -403,18 +458,19 @@ export function WriteScreen() {
       </div>
 
       {/* 모드 토글 */}
-      <Segmented
-        value={mode}
-        onChange={(v) => {
-          setMode(v);
-          setSaveState('idle');
-        }}
-        options={[
-          { value: 'personal', label: '개인 알림장' },
-          { value: 'common', label: '공통 알림장' },
-        ]}
-        className="mb-4"
-      />
+      <div data-tour="mode-toggle" className="mb-4">
+        <Segmented
+          value={mode}
+          onChange={(v) => {
+            setMode(v);
+            setSaveState('idle');
+          }}
+          options={[
+            { value: 'personal', label: '개인 알림장' },
+            { value: 'common', label: '공통 알림장' },
+          ]}
+        />
+      </div>
 
       {mode === 'personal' ? (
         <Card className="mb-4" hint="누구의 알림장인가요?">
@@ -488,7 +544,7 @@ export function WriteScreen() {
         </Card>
       )}
 
-      <Card className="mb-4" hint="오늘 무엇을 했나요?">
+      <Card className="mb-4" hint="오늘 무엇을 했나요?" data-tour="write-card">
         {loadedFromClass && (
           <div className="rounded-xl bg-clay-500/10 border border-clay-500/30 px-3 py-2 mb-4 text-[13px] font-semibold text-clay-700 flex items-center gap-2">
             <CheckIcon size={14} /> 반 공통 활동을 불러왔어요.
@@ -687,6 +743,8 @@ export function WriteScreen() {
           </Card>
         </div>
       )}
+
+      {tourOn && <Walkthrough steps={TOUR_STEPS} onFinish={finishTour} />}
     </>
   );
 }
