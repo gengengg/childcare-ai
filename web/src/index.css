@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --tap-highlight: rgba(139, 104, 68, 0.12);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-cream-50 text-ink font-sans antialiased;
+    font-feature-settings: 'ss01', 'tnum';
+    -webkit-tap-highlight-color: var(--tap-highlight);
+    overscroll-behavior-y: none;
+  }
+
+  button,
+  [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply text-ink placeholder:text-subtle/70;
+    font-size: 16px;
+  }
+
+  textarea {
+    resize: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(139, 104, 68, 0.25);
+    border-radius: 999px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-card shadow-card border border-cream-200/60 p-5;
+  }
+
+  .card-hint {
+    @apply text-[13px] font-semibold text-clay-700 mb-3 tracking-tight;
+  }
+
+  .field-input {
+    @apply w-full bg-cream-50 border border-cream-200 rounded-2xl px-4 py-3 text-[15px] leading-tight
+      focus:outline-none focus:border-clay-400 focus:bg-white transition;
+  }
+
+  .field-textarea {
+    @apply w-full bg-cream-50 border border-cream-200 rounded-2xl px-4 py-3 text-[15px] leading-relaxed
+      focus:outline-none focus:border-clay-400 focus:bg-white transition min-h-[100px];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 px-3.5 py-1.5 rounded-pill border border-cream-300
+      bg-white text-[13px] text-clay-700 font-medium transition
+      active:scale-[0.97];
+  }
+
+  @media (hover: hover) {
+    .chip:hover { @apply bg-cream-100; }
+  }
+
+  .chip-active {
+    @apply !bg-clay-700 !text-white !border-clay-700 !font-bold shadow-pop;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-clay-500 text-white
+      rounded-2xl py-3.5 px-5 text-[15px] font-bold shadow-pop
+      active:bg-clay-600 disabled:opacity-50 disabled:shadow-none transition;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 bg-cream-100 text-clay-700
+      rounded-2xl py-3 px-5 text-[14px] font-semibold
+      active:bg-cream-200 transition;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 bg-white text-clay-700
+      rounded-2xl py-3 px-5 text-[14px] font-semibold border border-cream-300
+      active:bg-cream-50 transition;
+  }
+
+  .segmented {
+    @apply grid grid-cols-3 gap-1 p-1 bg-cream-100 rounded-2xl;
+  }
+
+  .segmented-item {
+    @apply text-center py-2.5 rounded-xl text-[14px] text-subtle font-medium transition;
+  }
+
+  .segmented-item-active {
+    @apply bg-white text-ink shadow-sm font-bold;
+  }
+
+  .section-title {
+    @apply text-[14px] font-bold text-clay-800 mb-3;
+  }
+}
