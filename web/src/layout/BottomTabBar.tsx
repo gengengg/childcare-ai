@@ -11,7 +11,7 @@ const tabs = [
 export function BottomTabBar() {
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-40 border-t border-cream-200 bg-white/95 backdrop-blur"
+      className="fixed bottom-0 inset-x-0 z-40 border-t border-cream-200 bg-surface/95 backdrop-blur"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 6px)' }}
     >
       <div className="mx-auto max-w-md grid grid-cols-3 h-16 pt-1.5">

@@ -40,17 +40,19 @@ export default {
         subtle: 'rgb(var(--subtle) / <alpha-value>)',
       },
       fontFamily: {
-        sans: [
-          'Pretendard',
-          'Pretendard Variable',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"Apple SD Gothic Neo"',
-          '"Malgun Gothic"',
-          'system-ui',
-          'sans-serif',
-        ],
+        sans: ['"Pretendard Variable"', 'Pretendard', 'sans-serif'],
         serif: ['"Noto Serif KR"', 'serif'],
+      },
+      keyframes: {
+        toastLife: {
+          '0%':   { opacity: '0', transform: 'translateY(8px)' },
+          '15%':  { opacity: '1', transform: 'translateY(0)' },
+          '70%':  { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '0', transform: 'translateY(-4px)' },
+        },
+      },
+      animation: {
+        'toast-life': 'toastLife 1800ms ease forwards',
       },
       borderRadius: {
         card: '20px',

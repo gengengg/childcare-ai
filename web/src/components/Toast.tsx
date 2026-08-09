@@ -7,6 +7,8 @@ type ToastCtx = {
   show: (text: string, kind?: ToastKind) => void;
 };
 
+const TOAST_MS = 1800;
+
 const Ctx = createContext<ToastCtx | null>(null);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -15,7 +17,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const show = useCallback((text: string, kind: ToastKind = 'info') => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, text, kind }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 2400);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), TOAST_MS);
   }, []);
 
   return (
@@ -27,11 +29,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             key={t.id}
             className={
               'pointer-events-auto max-w-[92%] rounded-2xl px-4 py-3 text-[14px] font-semibold shadow-pop ' +
+              'animate-toast-life ' +
               (t.kind === 'error'
-                ? 'bg-red-500 text-white'
+                ? 'bg-[#DC2626] text-white'
                 : t.kind === 'success'
-                ? 'bg-clay-600 text-white'
-                : 'bg-ink text-white')
+                ? 'bg-[#8B6844] text-white'
+                : 'bg-[#2A2018] text-white')
             }
           >
             {t.text}
@@ -48,7 +51,6 @@ export function useToast() {
   return ctx;
 }
 
-/** ready 이벤트가 있을 때 (예: onboarding) 로컬 저장소 감지용 훅 */
 export function useMounted() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);

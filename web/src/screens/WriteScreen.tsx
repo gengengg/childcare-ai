@@ -79,12 +79,11 @@ function Shortcut({ icon, label, onClick }: ShortcutProps) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl bg-cream-50
-        border border-cream-200 active:scale-[0.98] active:bg-cream-100 transition"
+      className="flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl
+        bg-surface border border-cream-200 text-clay-700
+        active:scale-[0.98] active:bg-cream-100 transition"
     >
-      <span className="w-10 h-10 rounded-xl bg-white text-clay-700 flex items-center justify-center shadow-sm">
-        {icon}
-      </span>
+      {icon}
       <span className="text-[11px] font-bold text-clay-800 leading-tight text-center">
         {label}
       </span>
