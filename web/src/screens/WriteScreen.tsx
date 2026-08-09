@@ -343,15 +343,17 @@ export function WriteScreen() {
 
       setAiDraft(result.draft);
       setTeacherFinal(result.draft);
-      setSaveState('idle');
+      // AI가 만든 초안은 즉시 자동 저장 (사용자 편집 후 재저장하면 최신본으로 갱신)
+      const persisted = await persistRecord(result.draft, result.draft);
+      setSaveState(persisted ? 'saved' : 'idle');
       setTimeout(
         () => draftRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
         50
       );
       if (result.isFallback) {
-        toast.show('AI 서버에 문제가 있어 임시 초안을 만들었어요.', 'error');
+        toast.show('AI 서버 문제로 임시 초안을 저장했어요.', 'error');
       } else {
-        toast.show('초안이 완성됐어요.', 'success');
+        toast.show(persisted ? '초안 완성 · 자동 저장' : '초안이 완성됐어요.', 'success');
       }
     } catch {
       toast.show('AI 생성에 실패했어요. 잠시 후 다시 시도해주세요.', 'error');
@@ -360,28 +362,26 @@ export function WriteScreen() {
     }
   };
 
-  const handleSave = async () => {
-    if (!teacherFinal.trim()) {
-      toast.show('저장할 내용이 없어요.', 'error');
-      return;
-    }
+  /**
+   * 알림장 저장. 성공하면 true, 저장할 대상(childId 등)이 없으면 false.
+   * 개인/공통 모드에 따라 childId/childName/className을 결정한다.
+   */
+  const persistRecord = async (
+    draftText: string,
+    finalText: string
+  ): Promise<boolean> => {
+    if (!finalText.trim()) return false;
     let savingChildId: string;
     let savingChildName: string;
     let savingClassName: string;
     if (mode === 'personal') {
-      if (!targetName) {
-        toast.show('아이 정보를 확인해주세요.', 'error');
-        return;
-      }
+      if (!targetName) return false;
       savingChildId = child?.id ?? `manual-${targetName}`;
       savingChildName = targetName;
       savingClassName = child?.className ?? '';
     } else {
       const cn = commonClassName.trim();
-      if (showClass && !cn) {
-        toast.show('반 이름을 확인해주세요.', 'error');
-        return;
-      }
+      if (showClass && !cn) return false;
       savingChildId = cn
         ? `common-${cn}-${selectedDate}`
         : `common-${selectedDate}`;
@@ -398,12 +398,31 @@ export function WriteScreen() {
       napNote,
       healthNote,
       photos,
-      aiDraft,
-      teacherFinal,
+      aiDraft: draftText,
+      teacherFinal: finalText,
     });
     await Promise.all([saveTone(tone), saveLength(length)]);
-    setSaveState('saved');
-    toast.show('저장 완료', 'success');
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!teacherFinal.trim()) {
+      toast.show('저장할 내용이 없어요.', 'error');
+      return;
+    }
+    if (mode === 'personal' && !targetName) {
+      toast.show('아이 정보를 확인해주세요.', 'error');
+      return;
+    }
+    if (mode === 'common' && showClass && !commonClassName.trim()) {
+      toast.show('반 이름을 확인해주세요.', 'error');
+      return;
+    }
+    const ok = await persistRecord(aiDraft, teacherFinal);
+    if (ok) {
+      setSaveState('saved');
+      toast.show('저장 완료', 'success');
+    }
   };
 
   const handleCopy = async () => {

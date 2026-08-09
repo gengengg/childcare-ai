@@ -168,13 +168,15 @@ export function RecordEditorScreen() {
       });
       setAiDraft(result.draft);
       setTeacherFinal(result.draft);
-      setSaveState('idle');
+      // 자동 저장 (아이별 기록은 childId+date 키로 upsert)
+      await persistRecord(result.draft, result.draft);
+      setSaveState('saved');
       setTimeout(
         () => draftRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
         50
       );
-      if (result.isFallback) toast.show('AI 서버에 문제가 있어 임시 초안을 만들었어요.', 'error');
-      else toast.show('초안이 완성됐어요.', 'success');
+      if (result.isFallback) toast.show('AI 서버 문제로 임시 초안을 저장했어요.', 'error');
+      else toast.show('초안 완성 · 자동 저장', 'success');
     } catch {
       toast.show('AI 생성에 실패했어요.', 'error');
     } finally {
@@ -182,12 +184,8 @@ export function RecordEditorScreen() {
     }
   };
 
-  const handleSave = async () => {
-    if (!child) return;
-    if (!teacherFinal.trim()) {
-      toast.show('저장할 내용이 없어요.', 'error');
-      return;
-    }
+  const persistRecord = async (draftText: string, finalText: string) => {
+    if (!child || !finalText.trim()) return;
     await saveDailyRecord({
       childId: child.id,
       childName: child.name,
@@ -198,9 +196,18 @@ export function RecordEditorScreen() {
       napNote,
       healthNote,
       photos,
-      aiDraft,
-      teacherFinal,
+      aiDraft: draftText,
+      teacherFinal: finalText,
     });
+  };
+
+  const handleSave = async () => {
+    if (!child) return;
+    if (!teacherFinal.trim()) {
+      toast.show('저장할 내용이 없어요.', 'error');
+      return;
+    }
+    await persistRecord(aiDraft, teacherFinal);
     setSaveState('saved');
     toast.show('저장 완료', 'success');
   };
