@@ -41,7 +41,8 @@ export function Walkthrough({ steps, onFinish }: Props) {
 
   const step = steps[i];
 
-  // 타겟 요소 스크롤 + rect 측정
+  // 타겟 요소 rect 즉시 측정 → 하이라이트/툴팁이 다음 클릭 즉시 이동.
+  // 이후 부드러운 스크롤이 진행되며 아래 scroll 리스너가 rect를 계속 갱신한다.
   useEffect(() => {
     if (!step) return;
     const el = document.querySelector<HTMLElement>(step.selector);
@@ -49,9 +50,8 @@ export function Walkthrough({ steps, onFinish }: Props) {
       setRect(null);
       return;
     }
+    setRect(el.getBoundingClientRect());
     el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    const t = setTimeout(() => setRect(el.getBoundingClientRect()), 400);
-    return () => clearTimeout(t);
   }, [step, i]);
 
   // 리사이즈·스크롤 시 rect 재계산 (스크롤은 하이라이트만 따라가도록 부드럽게 갱신)
