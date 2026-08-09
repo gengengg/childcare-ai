@@ -1,32 +1,31 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // 베이스 (아이보리 / 크림)
+        // CSS 변수 기반 팔레트 (다크모드에서 값만 스왑)
         cream: {
-          50: '#FDFAF4',
-          100: '#FAF5EB',
-          200: '#F4ECDA',
-          300: '#ECE0C4',
-          400: '#E0CFA8',
-          500: '#D2BB85',
+          50: 'rgb(var(--cream-50) / <alpha-value>)',
+          100: 'rgb(var(--cream-100) / <alpha-value>)',
+          200: 'rgb(var(--cream-200) / <alpha-value>)',
+          300: 'rgb(var(--cream-300) / <alpha-value>)',
+          400: 'rgb(var(--cream-400) / <alpha-value>)',
+          500: 'rgb(var(--cream-500) / <alpha-value>)',
         },
-        // 브라운 (기본 브랜드 컬러)
         clay: {
-          50: '#F9F4EC',
-          100: '#EFE4D0',
-          200: '#DBC29B',
-          300: '#C29E6C',
-          400: '#A98046',
-          500: '#8B6844',
-          600: '#6E5233',
-          700: '#5A4128',
-          800: '#40301F',
-          900: '#2A2018',
+          50: 'rgb(var(--clay-50) / <alpha-value>)',
+          100: 'rgb(var(--clay-100) / <alpha-value>)',
+          200: 'rgb(var(--clay-200) / <alpha-value>)',
+          300: 'rgb(var(--clay-300) / <alpha-value>)',
+          400: 'rgb(var(--clay-400) / <alpha-value>)',
+          500: 'rgb(var(--clay-500) / <alpha-value>)',
+          600: 'rgb(var(--clay-600) / <alpha-value>)',
+          700: 'rgb(var(--clay-700) / <alpha-value>)',
+          800: 'rgb(var(--clay-800) / <alpha-value>)',
+          900: 'rgb(var(--clay-900) / <alpha-value>)',
         },
-        // 액센트 오렌지
         amber: {
           50: '#FDF4E6',
           100: '#F9E5C3',
@@ -35,8 +34,10 @@ export default {
           400: '#D9863A',
           500: '#B76A2A',
         },
-        ink: '#2A2018',
-        subtle: '#8A7761',
+        // 시맨틱 컬러
+        surface: 'rgb(var(--surface) / <alpha-value>)',
+        ink: 'rgb(var(--ink) / <alpha-value>)',
+        subtle: 'rgb(var(--subtle) / <alpha-value>)',
       },
       fontFamily: {
         sans: [
@@ -56,8 +57,8 @@ export default {
         pill: '999px',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(60, 45, 30, 0.04), 0 8px 24px -12px rgba(60, 45, 30, 0.10)',
-        pop: '0 4px 16px rgba(139, 104, 68, 0.20)',
+        card: 'var(--shadow-card)',
+        pop: 'var(--shadow-pop)',
       },
       spacing: {
         safe: 'env(safe-area-inset-bottom)',

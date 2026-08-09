@@ -12,6 +12,7 @@ import { StyleSetupScreen } from './screens/StyleSetupScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { ManageChildrenScreen } from './screens/ManageChildrenScreen';
 import { CalendarScreen } from './screens/CalendarScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="onboarding" element={<OnboardingScreen />} />
               <Route path="manage-children" element={<ManageChildrenScreen />} />
               <Route path="calendar" element={<CalendarScreen />} />
+              <Route path="settings" element={<SettingsScreen />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

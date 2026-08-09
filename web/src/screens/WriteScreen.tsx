@@ -373,14 +373,19 @@ export function WriteScreen() {
         title="알림장"
         subtitle="사진과 활동만 넣으면 초안이 완성돼요"
         action={
-          <span className="text-[12px] font-bold text-clay-700 bg-cream-100 rounded-pill px-3 py-1.5">
-            AI
-          </span>
+          <button
+            onClick={() => navigate('/settings')}
+            aria-label="설정"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-clay-700
+              bg-cream-100 active:bg-cream-200 transition"
+          >
+            <SettingsIcon size={20} />
+          </button>
         }
       />
 
       {/* 빠른 이동 */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-3 gap-2 mb-4">
         <Shortcut
           icon={<GridIcon size={20} />}
           label="반 공통 활동"
@@ -395,11 +400,6 @@ export function WriteScreen() {
           icon={<CalendarIcon size={20} />}
           label="달력"
           onClick={() => navigate('/calendar')}
-        />
-        <Shortcut
-          icon={<SettingsIcon size={20} />}
-          label="문체 설정"
-          onClick={() => navigate('/style-setup')}
         />
       </div>
 

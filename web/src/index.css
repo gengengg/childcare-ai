@@ -6,6 +6,65 @@
   :root {
     color-scheme: light;
     --tap-highlight: rgba(139, 104, 68, 0.12);
+
+    /* 라이트 팔레트 (space-separated RGB for Tailwind alpha) */
+    --cream-50: 253 250 244;
+    --cream-100: 250 245 235;
+    --cream-200: 244 236 218;
+    --cream-300: 236 224 196;
+    --cream-400: 224 207 168;
+    --cream-500: 210 187 133;
+
+    --clay-50: 249 244 236;
+    --clay-100: 239 228 208;
+    --clay-200: 219 194 155;
+    --clay-300: 194 158 108;
+    --clay-400: 169 128 70;
+    --clay-500: 139 104 68;
+    --clay-600: 110 82 51;
+    --clay-700: 90 65 40;
+    --clay-800: 64 48 31;
+    --clay-900: 42 32 24;
+
+    --surface: 255 255 255;
+    --ink: 42 32 24;
+    --subtle: 138 119 97;
+
+    --shadow-card: 0 1px 2px rgba(60, 45, 30, 0.04),
+      0 8px 24px -12px rgba(60, 45, 30, 0.10);
+    --shadow-pop: 0 4px 16px rgba(139, 104, 68, 0.20);
+  }
+
+  .dark {
+    color-scheme: dark;
+    --tap-highlight: rgba(224, 207, 168, 0.15);
+
+    /* 다크 팔레트: cream = 진해지고, clay = 밝아진다 (역할 유지) */
+    --cream-50: 22 18 14;      /* 페이지 배경 */
+    --cream-100: 32 26 20;     /* 아주 얕은 카드/입력 */
+    --cream-200: 60 50 39;     /* 보더 */
+    --cream-300: 82 68 52;
+    --cream-400: 112 92 70;
+    --cream-500: 148 122 92;
+
+    --clay-50: 40 32 25;
+    --clay-100: 60 50 39;
+    --clay-200: 100 80 60;
+    --clay-300: 140 108 78;
+    --clay-400: 176 133 92;
+    --clay-500: 194 158 108;   /* 다크에서도 브라운 액센트 유지 (약간 밝게) */
+    --clay-600: 219 194 155;
+    --clay-700: 236 213 172;   /* 밝은 브라운 (chip-active용) */
+    --clay-800: 244 236 218;
+    --clay-900: 252 244 228;
+
+    --surface: 40 32 25;       /* 카드 배경 */
+    --ink: 244 236 218;        /* 본문 텍스트 (밝게) */
+    --subtle: 176 155 122;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35),
+      0 8px 24px -12px rgba(0, 0, 0, 0.6);
+    --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.5);
   }
 
   html,
@@ -47,33 +106,38 @@
     height: 6px;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(139, 104, 68, 0.25);
+    background: rgb(var(--clay-500) / 0.35);
     border-radius: 999px;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-card shadow-card border border-cream-200/60 p-5;
+    @apply bg-surface rounded-card shadow-card border border-cream-200/60 p-5;
   }
 
   .card-hint {
     @apply text-[13px] font-semibold text-clay-700 mb-3 tracking-tight;
   }
 
+  /* 다크에서는 clay-700이 밝은 크림색이라 hint 컬러가 잘 안 보임. 톤 다운 */
+  .dark .card-hint {
+    @apply text-clay-600;
+  }
+
   .field-input {
-    @apply w-full bg-cream-50 border border-cream-200 rounded-2xl px-4 py-3 text-[15px] leading-tight
-      focus:outline-none focus:border-clay-400 focus:bg-white transition;
+    @apply w-full bg-cream-100 border border-cream-200 rounded-2xl px-4 py-3 text-[15px] leading-tight
+      focus:outline-none focus:border-clay-400 focus:bg-surface transition text-ink;
   }
 
   .field-textarea {
-    @apply w-full bg-cream-50 border border-cream-200 rounded-2xl px-4 py-3 text-[15px] leading-relaxed
-      focus:outline-none focus:border-clay-400 focus:bg-white transition min-h-[100px];
+    @apply w-full bg-cream-100 border border-cream-200 rounded-2xl px-4 py-3 text-[15px] leading-relaxed
+      focus:outline-none focus:border-clay-400 focus:bg-surface transition min-h-[100px] text-ink;
   }
 
   .chip {
     @apply inline-flex items-center gap-1 px-3.5 py-1.5 rounded-pill border border-cream-300
-      bg-white text-[13px] text-clay-700 font-medium transition
+      bg-surface text-[13px] text-clay-700 font-medium transition
       active:scale-[0.97];
   }
 
@@ -81,8 +145,14 @@
     .chip:hover { @apply bg-cream-100; }
   }
 
+  /* 라이트: 진한 브라운 배경 + 흰 글씨 */
   .chip-active {
     @apply !bg-clay-700 !text-white !border-clay-700 !font-bold shadow-pop;
+  }
+
+  /* 다크: clay-700이 밝은 크림색이라 흰 글씨가 안 보임 → 어두운 액센트 배경 사용 */
+  .dark .chip-active {
+    @apply !bg-clay-500 !text-white !border-clay-500 !font-bold shadow-pop;
   }
 
   .btn-primary {
@@ -98,7 +168,7 @@
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 bg-white text-clay-700
+    @apply inline-flex items-center justify-center gap-2 bg-surface text-clay-700
       rounded-2xl py-3 px-5 text-[14px] font-semibold border border-cream-300
       active:bg-cream-50 transition;
   }
@@ -112,10 +182,26 @@
   }
 
   .segmented-item-active {
-    @apply bg-white text-ink shadow-sm font-bold;
+    @apply bg-surface text-ink shadow-sm font-bold;
   }
 
   .section-title {
     @apply text-[14px] font-bold text-clay-800 mb-3;
+  }
+
+  .tabs {
+    @apply flex gap-1 border-b border-cream-200 -mx-1;
+  }
+
+  .tabs-item {
+    @apply px-4 py-3 text-[14px] font-semibold text-subtle border-b-2 border-transparent
+      transition -mb-px;
+  }
+
+  .tabs-item-active {
+    @apply text-clay-700 border-clay-500;
+  }
+  .dark .tabs-item-active {
+    @apply text-clay-800 border-clay-500;
   }
 }

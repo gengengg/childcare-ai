@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 import { Capacitor } from '@capacitor/core';
 import './index.css';
 import App from './App.tsx';
+import { initTheme } from './lib/theme';
+
+initTheme();
 
 async function initNative() {
   if (!Capacitor.isNativePlatform()) return;
