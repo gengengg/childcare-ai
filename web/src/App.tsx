@@ -17,6 +17,9 @@ import { CalendarScreen } from './screens/CalendarScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { NicknameScreen } from './screens/NicknameScreen';
+import { FindIdScreen } from './screens/FindIdScreen';
+import { FindPasswordScreen } from './screens/FindPasswordScreen';
+import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 
 export default function App() {
   return (
@@ -28,6 +31,9 @@ export default function App() {
               <Routes>
                 <Route path="login" element={<LoginScreen />} />
                 <Route path="nickname" element={<NicknameScreen />} />
+                <Route path="find-id" element={<FindIdScreen />} />
+                <Route path="find-password" element={<FindPasswordScreen />} />
+                <Route path="reset-password" element={<ResetPasswordScreen />} />
                 <Route element={<AppLayout />}>
                   <Route index element={<WriteScreen />} />
                   <Route path="records" element={<RecordsScreen />} />

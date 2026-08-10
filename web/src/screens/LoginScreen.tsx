@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { useToast } from '@/components/Toast';
 import {
   emailExists,
   enterGuestMode,
+  normalizePhone,
   signInWithMagicLink,
   signInWithPassword,
   signUpWithPassword,
@@ -17,8 +19,18 @@ export function LoginScreen() {
   const toast = useToast();
   const { refreshGuest } = useAuth();
   const [mode, setMode] = useState<Mode>('signin');
+
+  // 공통
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // 회원가입 전용
+  const [fullName, setFullName] = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [phone, setPhone] = useState('');
+  const [consented, setConsented] = useState(false);
+  const [showPolicy, setShowPolicy] = useState(false);
+
   const [busy, setBusy] = useState(false);
   const [needsConfirm, setNeedsConfirm] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
@@ -33,10 +45,36 @@ export function LoginScreen() {
       toast.show('비밀번호는 6자 이상으로 입력해 주세요');
       return;
     }
+
+    if (mode === 'signup') {
+      if (!fullName.trim()) {
+        toast.show('이름을 입력해 주세요');
+        return;
+      }
+      if (!birthdate) {
+        toast.show('생년월일을 입력해 주세요');
+        return;
+      }
+      const phoneDigits = normalizePhone(phone);
+      if (phoneDigits.length < 10) {
+        toast.show('휴대전화번호를 확인해 주세요');
+        return;
+      }
+      if (!consented) {
+        toast.show('개인정보 수집·이용에 동의해야 가입할 수 있어요');
+        return;
+      }
+    }
+
     setBusy(true);
     try {
       if (mode === 'signup') {
-        const { needsConfirmation } = await signUpWithPassword(em, password);
+        const { needsConfirmation } = await signUpWithPassword(em, password, {
+          fullName: fullName.trim(),
+          birthdate,
+          phone: normalizePhone(phone),
+          consentedAt: new Date().toISOString(),
+        });
         if (needsConfirmation) {
           setNeedsConfirm(true);
         } else {
@@ -87,10 +125,6 @@ export function LoginScreen() {
     await enterGuestMode();
     await refreshGuest();
     toast.show('게스트 모드로 시작합니다');
-  };
-
-  const handleOAuthPlaceholder = (name: string) => () => {
-    toast.show(`${name} 로그인은 곧 지원 예정이에요`);
   };
 
   if (needsConfirm) {
@@ -184,17 +218,79 @@ export function LoginScreen() {
           onChange={(e) => setPassword(e.target.value)}
           disabled={busy}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSubmit();
+            if (e.key === 'Enter' && mode === 'signin') handleSubmit();
           }}
         />
+
+        {mode === 'signup' && (
+          <>
+            <input
+              type="text"
+              autoComplete="name"
+              className="field-input"
+              placeholder="이름 (실명)"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              disabled={busy}
+            />
+            <div>
+              <label
+                htmlFor="signup-birthdate"
+                className="text-[12px] font-semibold text-subtle ml-1 mb-1 block"
+              >
+                생년월일 (년 / 월 / 일)
+              </label>
+              <input
+                id="signup-birthdate"
+                type="date"
+                autoComplete="bday"
+                className="field-input"
+                value={birthdate}
+                onChange={(e) => setBirthdate(e.target.value)}
+                disabled={busy}
+                max={new Date().toISOString().slice(0, 10)}
+              />
+            </div>
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              className="field-input"
+              placeholder="휴대전화번호 (예: 010-1234-5678)"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              disabled={busy}
+            />
+
+            <ConsentBox
+              checked={consented}
+              onCheck={setConsented}
+              expanded={showPolicy}
+              onToggleExpand={() => setShowPolicy((v) => !v)}
+            />
+          </>
+        )}
+
         <button
           onClick={handleSubmit}
-          disabled={busy}
+          disabled={busy || (mode === 'signup' && !consented)}
           className="btn-primary w-full"
         >
           <SparkleIcon size={16} />
           {busy ? '처리 중…' : mode === 'signup' ? '회원가입' : '로그인'}
         </button>
+
+        {mode === 'signin' && (
+          <div className="flex items-center justify-center gap-3 text-[12px] text-subtle py-1">
+            <Link to="/find-id" className="hover:text-clay-700 underline-offset-4 hover:underline">
+              아이디 찾기
+            </Link>
+            <span className="text-cream-300">|</span>
+            <Link to="/find-password" className="hover:text-clay-700 underline-offset-4 hover:underline">
+              비밀번호 재설정
+            </Link>
+          </div>
+        )}
 
         <div className="flex items-center gap-3 py-1">
           <div className="flex-1 h-px bg-cream-200" />
@@ -204,12 +300,6 @@ export function LoginScreen() {
 
         <button className="btn-outline w-full" onClick={handleMagicLink} disabled={busy}>
           이메일 링크로 로그인 (비밀번호 없이)
-        </button>
-        <button className="btn-outline w-full" onClick={handleOAuthPlaceholder('Google')}>
-          Google 계정으로 계속
-        </button>
-        <button className="btn-outline w-full" onClick={handleOAuthPlaceholder('카카오')}>
-          카카오 계정으로 계속
         </button>
 
         <button
@@ -222,6 +312,65 @@ export function LoginScreen() {
           게스트 데이터는 이 기기에만 저장돼요.
         </p>
       </div>
+    </div>
+  );
+}
+
+function ConsentBox({
+  checked,
+  onCheck,
+  expanded,
+  onToggleExpand,
+}: {
+  checked: boolean;
+  onCheck: (v: boolean) => void;
+  expanded: boolean;
+  onToggleExpand: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-cream-200 bg-cream-100 p-3">
+      <label className="flex items-start gap-2.5 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onCheck(e.target.checked)}
+          className="mt-0.5 w-4 h-4 accent-clay-500"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 justify-between">
+            <span className="text-[13px] font-semibold text-ink">
+              개인정보 수집·이용 동의 <span className="text-clay-500">(필수)</span>
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                onToggleExpand();
+              }}
+              className="text-[11px] text-subtle underline underline-offset-4"
+            >
+              {expanded ? '접기' : '자세히'}
+            </button>
+          </div>
+          <p className="text-[11px] text-subtle mt-1 leading-relaxed">
+            아이디/비밀번호 찾기에 사용됩니다.
+          </p>
+        </div>
+      </label>
+
+      {expanded && (
+        <div className="mt-3 pt-3 border-t border-cream-200 text-[12px] text-ink leading-relaxed">
+          <p className="font-semibold mb-1">수집 항목</p>
+          <p className="text-subtle mb-2">이메일, 이름, 생년월일, 휴대전화번호</p>
+          <p className="font-semibold mb-1">이용 목적</p>
+          <p className="text-subtle mb-2">계정 복구 (아이디/비밀번호 찾기)</p>
+          <p className="font-semibold mb-1">보관 기간</p>
+          <p className="text-subtle mb-2">회원 탈퇴 시까지. 제3자 제공 없음.</p>
+          <p className="text-[11px] text-subtle mt-2">
+            동의를 거부할 수 있으나, 계정 복구가 어려워지므로 미동의 시 회원가입이 제한됩니다.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

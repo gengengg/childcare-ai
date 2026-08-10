@@ -13,8 +13,15 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      // 인증 관련 화면은 온보딩보다 우선. 여기서 리다이렉트하면 순환 발생.
-      if (loc.pathname === '/login' || loc.pathname === '/nickname') {
+      // 인증/복구 관련 화면은 온보딩보다 우선. 여기서 리다이렉트하면 순환 발생.
+      const authPaths = [
+        '/login',
+        '/nickname',
+        '/find-id',
+        '/find-password',
+        '/reset-password',
+      ];
+      if (authPaths.includes(loc.pathname)) {
         setChecked(true);
         return;
       }

@@ -23,9 +23,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       const path = loc.pathname;
       const isLoginPage = path === '/login';
       const isNicknamePage = path === '/nickname';
+      const isRecoveryPage =
+        path === '/find-id' ||
+        path === '/find-password' ||
+        path === '/reset-password';
+      const isPublicPage = isLoginPage || isRecoveryPage;
 
       if (mode === 'anon') {
-        if (!isLoginPage) {
+        if (!isPublicPage) {
           nav('/login', { replace: true });
           return;
         }
@@ -35,6 +40,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
       if (isLoginPage) {
         nav('/', { replace: true });
+        return;
+      }
+
+      // 복구 페이지는 로그인/게스트 상태 관계없이 열람 가능
+      if (isRecoveryPage) {
+        if (!cancelled) setReady(true);
         return;
       }
 
