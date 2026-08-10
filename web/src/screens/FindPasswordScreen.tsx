@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/Toast';
 import { sendPasswordReset } from '@/lib/auth';
 import { SparkleIcon } from '@/components/icons';
+import { VerifyCodePanel } from '@/components/VerifyCodePanel';
 
 export function FindPasswordScreen() {
   const toast = useToast();
+  const nav = useNavigate();
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -29,29 +31,13 @@ export function FindPasswordScreen() {
 
   if (sent) {
     return (
-      <div className="min-h-full flex flex-col justify-center py-8 px-6">
-        <div className="card">
-          <p className="text-[14px] font-bold text-ink mb-1">메일함을 확인해 주세요</p>
-          <p className="text-[13px] text-subtle leading-relaxed">
-            <span className="font-medium text-ink">{email}</span> 로 비밀번호 재설정 링크를 보냈어요.
-            메일 안의 버튼을 누르면 새 비밀번호를 설정할 수 있어요.
-          </p>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            <button
-              className="btn-ghost"
-              onClick={() => {
-                setSent(false);
-                setEmail('');
-              }}
-            >
-              다시 시도
-            </button>
-            <Link to="/login" className="btn-primary justify-center">
-              로그인으로
-            </Link>
-          </div>
-        </div>
-      </div>
+      <VerifyCodePanel
+        email={email}
+        type="recovery"
+        onResend={() => sendPasswordReset(email)}
+        onBack={() => setSent(false)}
+        onSuccess={() => nav('/reset-password', { replace: true })}
+      />
     );
   }
 

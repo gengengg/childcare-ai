@@ -6,12 +6,14 @@ import {
   emailExists,
   enterGuestMode,
   normalizePhone,
+  resendSignupConfirmation,
   signInWithMagicLink,
   signInWithPassword,
   signUpWithPassword,
 } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { PencilIcon, SparkleIcon } from '@/components/icons';
+import { VerifyCodePanel } from '@/components/VerifyCodePanel';
 
 type Mode = 'signin' | 'signup';
 
@@ -129,16 +131,11 @@ export function LoginScreen() {
 
   if (needsConfirm) {
     return (
-      <NoticeCard
-        title="메일함을 확인해 주세요"
-        body={
-          <>
-            <span className="font-medium text-ink">{email}</span> 로 회원가입 확인 링크를 보냈어요.
-            메일 안의 버튼을 누르면 계정이 활성화됩니다.
-          </>
-        }
-        actionLabel="로그인 화면으로"
-        onAction={() => {
+      <VerifyCodePanel
+        email={email}
+        type="signup"
+        onResend={() => resendSignupConfirmation(email)}
+        onBack={() => {
           setNeedsConfirm(false);
           setMode('signin');
         }}
@@ -148,16 +145,11 @@ export function LoginScreen() {
 
   if (magicSent) {
     return (
-      <NoticeCard
-        title="메일함을 확인해 주세요"
-        body={
-          <>
-            <span className="font-medium text-ink">{email}</span> 로 로그인 링크를 보냈어요.
-            메일 안의 버튼을 누르면 자동으로 로그인됩니다.
-          </>
-        }
-        actionLabel="돌아가기"
-        onAction={() => setMagicSent(false)}
+      <VerifyCodePanel
+        email={email}
+        type="magiclink"
+        onResend={() => signInWithMagicLink(email)}
+        onBack={() => setMagicSent(false)}
       />
     );
   }
@@ -375,26 +367,3 @@ function ConsentBox({
   );
 }
 
-function NoticeCard({
-  title,
-  body,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  body: React.ReactNode;
-  actionLabel: string;
-  onAction: () => void;
-}) {
-  return (
-    <div className="min-h-full flex flex-col justify-center py-8 px-6">
-      <div className="card">
-        <p className="text-[14px] font-bold text-ink mb-1">{title}</p>
-        <p className="text-[13px] text-subtle leading-relaxed">{body}</p>
-        <button className="btn-ghost w-full mt-4" onClick={onAction}>
-          {actionLabel}
-        </button>
-      </div>
-    </div>
-  );
-}

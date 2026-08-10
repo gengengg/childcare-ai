@@ -111,15 +111,48 @@ export async function findEmailByRecovery(
 }
 
 /**
- * 비밀번호 재설정 링크 발송.
- * Supabase 이메일 템플릿(Reset password) 사용.
- * 유저는 링크 클릭 → /reset-password 로 이동 → 새 비번 설정.
+ * 비밀번호 재설정 링크 + 코드 발송.
+ * Supabase 이메일 템플릿(Reset password) 사용. 링크와 함께 6자리 OTP 도 함께 발송됨.
+ * 유저가 다른 기기에서 메일 확인해도 코드를 원래 기기에 입력하면 재설정 가능.
  */
 export async function sendPasswordReset(email: string): Promise<void> {
   const { error } = await supabase.auth.resetPasswordForEmail(
     email.trim().toLowerCase(),
     { redirectTo: `${window.location.origin}/reset-password` }
   );
+  if (error) throw error;
+}
+
+/**
+ * 이메일로 온 6자리 OTP 코드로 확인.
+ * type:
+ *   'signup'    — 회원가입 확인 (signUp 이후)
+ *   'magiclink' — 매직링크 로그인 (signInWithOtp 이후)
+ *   'recovery'  — 비밀번호 재설정 (resetPasswordForEmail 이후)
+ * 성공 시 세션이 생성돼 로그인된 상태가 된다.
+ * cross-device 문제(모바일에서 확인, 데스크톱에서 진행) 해결용.
+ */
+export type OtpVerifyType = 'signup' | 'magiclink' | 'recovery' | 'email';
+
+export async function verifyEmailOtp(
+  email: string,
+  token: string,
+  type: OtpVerifyType
+): Promise<void> {
+  const { error } = await supabase.auth.verifyOtp({
+    email: email.trim().toLowerCase(),
+    token: token.trim(),
+    type,
+  });
+  if (error) throw error;
+}
+
+/** 회원가입 확인 코드 재발송. */
+export async function resendSignupConfirmation(email: string): Promise<void> {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email.trim().toLowerCase(),
+  });
   if (error) throw error;
 }
 
