@@ -5,6 +5,7 @@ import { Chip } from '@/components/Chip';
 import { Header } from '@/components/Header';
 import { useToast } from '@/components/Toast';
 import { CalendarIcon, CopyIcon, FolderIcon, TrashIcon } from '@/components/icons';
+import { Mascot } from '@/components/Mascot';
 import {
   deleteDailyRecord,
   getAllDailyRecords,
@@ -120,7 +121,10 @@ export function RecordsScreen() {
 
       {groupedByDate.length === 0 ? (
         <Card>
-          <p className="text-center text-subtle py-8">아직 저장된 알림장이 없어요.</p>
+          <div className="flex flex-col items-center py-8">
+            <Mascot variant="sleep" size={80} className="mb-3" />
+            <p className="text-center text-subtle">아직 저장된 알림장이 없어요.</p>
+          </div>
         </Card>
       ) : (
         <div className="space-y-5">

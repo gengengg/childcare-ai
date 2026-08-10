@@ -4,6 +4,7 @@ import { Chip } from '@/components/Chip';
 import { Header } from '@/components/Header';
 import { useToast } from '@/components/Toast';
 import { PlusIcon, SmileIcon, TrashIcon } from '@/components/icons';
+import { Mascot } from '@/components/Mascot';
 import { addChild, deleteChild, getChildren, updateChild, type Child } from '@/lib/children';
 import { computeShowClass, getShowClassSetting } from '@/lib/settings';
 
@@ -131,7 +132,10 @@ export function ChildrenScreen() {
 
       <Card hint={`아이 목록 (${children.length}명)`}>
         {children.length === 0 ? (
-          <p className="text-center text-subtle py-6">아직 등록된 아이가 없어요.</p>
+          <div className="flex flex-col items-center py-6">
+            <Mascot variant="thinking" size={72} className="mb-3" />
+            <p className="text-center text-subtle">아직 등록된 아이가 없어요.</p>
+          </div>
         ) : (
           <ul className="divide-y divide-cream-200">
             {children.map((c) => (

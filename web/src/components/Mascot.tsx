@@ -8,6 +8,7 @@
  * 사이즈: 정사각형, 최소 256px (레티나 대응)
  */
 
+import { useState } from 'react';
 import { clsx } from 'clsx';
 
 export type MascotVariant =
@@ -25,10 +26,11 @@ export type MascotVariant =
  *   happy: '/mascot/hamzzi-happy.png',
  */
 const IMAGE_MAP: Partial<Record<MascotVariant, string>> = {
-  // 이미지 준비되면 여기에 등록. 예:
-  // happy: '/mascot/hamzzi-happy.png',
-  // thinking: '/mascot/hamzzi-thinking.png',
-  // ...
+  happy: '/mascot/hamzzi-happy.png',
+  thinking: '/mascot/hamzzi-thinking.png',
+  point: '/mascot/hamzzi-point.png',
+  wave: '/mascot/hamzzi-wave.png',
+  sleep: '/mascot/hamzzi-sleep.png',
 };
 
 /** 이미지 없을 때 폴백 이모지. */
@@ -48,18 +50,21 @@ type Props = {
 
 export function Mascot({ variant = 'happy', size = 48, className }: Props) {
   const src = IMAGE_MAP[variant];
-  if (src) {
+  const [errored, setErrored] = useState(false);
+
+  if (src && !errored) {
     return (
       <img
         src={src}
         alt="햄찌"
         width={size}
         height={size}
+        onError={() => setErrored(true)}
         className={clsx('inline-block object-contain', className)}
       />
     );
   }
-  // 이모지 폴백
+  // 이모지 폴백 (이미지 없거나 로드 실패)
   return (
     <span
       className={clsx('inline-flex items-center justify-center leading-none', className)}

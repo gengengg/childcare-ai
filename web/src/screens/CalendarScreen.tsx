@@ -4,6 +4,7 @@ import { Card } from '@/components/Card';
 import { Header } from '@/components/Header';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import { CalendarIcon } from '@/components/icons';
+import { Mascot } from '@/components/Mascot';
 import { getAllDailyRecords, getTodayKey, type DailyRecord } from '@/lib/dailyRecords';
 
 function formatKorean(date: string) {
@@ -44,7 +45,10 @@ export function CalendarScreen() {
 
       <Card hint={formatKorean(selected)}>
         {dayRecords.length === 0 ? (
-          <p className="text-center text-subtle py-6">이 날짜에 저장된 알림장이 없어요.</p>
+          <div className="flex flex-col items-center py-6">
+            <Mascot variant="sleep" size={72} className="mb-3" />
+            <p className="text-center text-subtle">이 날짜에 저장된 알림장이 없어요.</p>
+          </div>
         ) : (
           <ul className="divide-y divide-cream-200">
             {dayRecords.map((r) => (

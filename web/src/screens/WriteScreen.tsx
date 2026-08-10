@@ -49,6 +49,7 @@ import {
   getShowClassSetting,
 } from '@/lib/settings';
 import { Walkthrough, type TourStep } from '@/components/Walkthrough';
+import { Mascot } from '@/components/Mascot';
 import { hasSeenTour, markTourSeen } from '@/lib/tour';
 
 type WriteMode = 'personal' | 'common';
@@ -755,8 +756,17 @@ export function WriteScreen() {
         disabled={isGenerating}
         className="btn-primary w-full py-4 text-[16px] mb-4"
       >
-        <SparkleIcon size={18} />
-        {isGenerating ? 'AI가 초안을 쓰고 있어요…' : 'AI 초안 만들기'}
+        {isGenerating ? (
+          <>
+            <Mascot variant="thinking" size={22} />
+            햄찌가 알림장을 쓰고 있어요…
+          </>
+        ) : (
+          <>
+            <SparkleIcon size={18} />
+            AI 초안 만들기
+          </>
+        )}
       </button>
 
       {aiDraft && (
