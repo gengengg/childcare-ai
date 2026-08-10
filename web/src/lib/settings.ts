@@ -1,4 +1,6 @@
 import { getItem, setItem } from './storage';
+import { supabase } from './supabase';
+import { getSupabaseUserId } from './session';
 import type { Child } from './children';
 
 /**
@@ -12,6 +14,20 @@ export type ShowClassSetting = 'auto' | 'on' | 'off';
 const KEY = 'show_class_name_v1';
 
 export async function getShowClassSetting(): Promise<ShowClassSetting> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('show_class_setting')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) {
+      console.error('[settings.get]', error);
+      return 'auto';
+    }
+    const v = data?.show_class_setting;
+    return v === 'on' || v === 'off' ? v : 'auto';
+  }
   const v = await getItem(KEY);
   if (v === 'on') return 'on';
   if (v === 'off') return 'off';
@@ -19,6 +35,18 @@ export async function getShowClassSetting(): Promise<ShowClassSetting> {
 }
 
 export async function setShowClassSetting(s: ShowClassSetting): Promise<void> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ show_class_setting: s })
+      .eq('id', userId);
+    if (error) {
+      console.error('[settings.set]', error);
+      throw error;
+    }
+    return;
+  }
   await setItem(KEY, s);
 }
 

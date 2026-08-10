@@ -1,4 +1,6 @@
 import { getItem, setItem, multiRemove } from './storage';
+import { supabase } from './supabase';
+import { getSupabaseUserId } from './session';
 
 const STYLE_MODE_KEY = 'style_mode_v1';
 const STYLE_GUIDE_KEY = 'style_guide_v1';
@@ -18,29 +20,68 @@ export type StyleSample =
 export type ToneOption = 'warm' | 'friendly' | 'concise';
 export type LengthOption = 'short' | 'medium' | 'long';
 
+type Row = {
+  style_mode: StyleMode;
+  style_guide: string;
+  style_samples: StyleSample[] | null;
+  emoji_enabled: boolean;
+  tone: ToneOption;
+  length: LengthOption;
+};
+
 export function makeId(): string {
   return String(Date.now()) + '-' + Math.random().toString(36).slice(2, 8);
 }
 
+async function fetchRow(userId: string): Promise<Row | null> {
+  const { data, error } = await supabase
+    .from('style_settings')
+    .select('style_mode, style_guide, style_samples, emoji_enabled, tone, length')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    console.error('[styleSettings.fetch]', error);
+    return null;
+  }
+  return (data as Row | null) ?? null;
+}
+
+async function upsertRow(userId: string, patch: Partial<Row>): Promise<void> {
+  const { error } = await supabase
+    .from('style_settings')
+    .upsert({ user_id: userId, ...patch }, { onConflict: 'user_id' });
+  if (error) {
+    console.error('[styleSettings.upsert]', error);
+    throw error;
+  }
+}
+
+// ---------- Getters ----------
 export async function getStyleMode(): Promise<StyleMode> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const r = await fetchRow(userId);
+    return r?.style_mode ?? 'default';
+  }
   const v = await getItem(STYLE_MODE_KEY);
   return v === 'custom' ? 'custom' : 'default';
 }
 
-export async function setStyleMode(mode: StyleMode): Promise<void> {
-  await setItem(STYLE_MODE_KEY, mode);
-}
-
 export async function getStyleGuide(): Promise<string> {
-  const v = await getItem(STYLE_GUIDE_KEY);
-  return v ?? '';
-}
-
-export async function setStyleGuide(guide: string): Promise<void> {
-  await setItem(STYLE_GUIDE_KEY, guide);
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const r = await fetchRow(userId);
+    return r?.style_guide ?? '';
+  }
+  return (await getItem(STYLE_GUIDE_KEY)) ?? '';
 }
 
 export async function getStyleSamples(): Promise<StyleSample[]> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const r = await fetchRow(userId);
+    return r?.style_samples ?? [];
+  }
   const raw = await getItem(STYLE_SAMPLES_KEY);
   if (!raw) return [];
   try {
@@ -51,43 +92,89 @@ export async function getStyleSamples(): Promise<StyleSample[]> {
   }
 }
 
-export async function setStyleSamples(samples: StyleSample[]): Promise<void> {
-  const trimmed = samples.slice(0, MAX_STYLE_SAMPLES);
-  await setItem(STYLE_SAMPLES_KEY, JSON.stringify(trimmed));
-}
-
-export async function clearStyleData(): Promise<void> {
-  await multiRemove([STYLE_MODE_KEY, STYLE_GUIDE_KEY, STYLE_SAMPLES_KEY, EMOJI_ENABLED_KEY]);
-}
-
 export async function getEmojiEnabled(): Promise<boolean> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const r = await fetchRow(userId);
+    return r?.emoji_enabled ?? true;
+  }
   const v = await getItem(EMOJI_ENABLED_KEY);
   if (v === null) return true;
   return v === '1';
 }
 
-export async function setEmojiEnabled(enabled: boolean): Promise<void> {
-  await setItem(EMOJI_ENABLED_KEY, enabled ? '1' : '0');
-}
-
 export async function getTone(): Promise<ToneOption> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const r = await fetchRow(userId);
+    return r?.tone ?? 'warm';
+  }
   const v = await getItem(TONE_KEY);
   return v === 'friendly' || v === 'concise' ? v : 'warm';
 }
 
-export async function setTone(tone: ToneOption): Promise<void> {
-  await setItem(TONE_KEY, tone);
-}
-
 export async function getLength(): Promise<LengthOption> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const r = await fetchRow(userId);
+    return r?.length ?? 'medium';
+  }
   const v = await getItem(LENGTH_KEY);
   return v === 'short' || v === 'long' ? v : 'medium';
 }
 
+// ---------- Setters ----------
+export async function setStyleMode(mode: StyleMode): Promise<void> {
+  const userId = await getSupabaseUserId();
+  if (userId) return upsertRow(userId, { style_mode: mode });
+  await setItem(STYLE_MODE_KEY, mode);
+}
+
+export async function setStyleGuide(guide: string): Promise<void> {
+  const userId = await getSupabaseUserId();
+  if (userId) return upsertRow(userId, { style_guide: guide });
+  await setItem(STYLE_GUIDE_KEY, guide);
+}
+
+export async function setStyleSamples(samples: StyleSample[]): Promise<void> {
+  const trimmed = samples.slice(0, MAX_STYLE_SAMPLES);
+  const userId = await getSupabaseUserId();
+  if (userId) return upsertRow(userId, { style_samples: trimmed });
+  await setItem(STYLE_SAMPLES_KEY, JSON.stringify(trimmed));
+}
+
+export async function setEmojiEnabled(enabled: boolean): Promise<void> {
+  const userId = await getSupabaseUserId();
+  if (userId) return upsertRow(userId, { emoji_enabled: enabled });
+  await setItem(EMOJI_ENABLED_KEY, enabled ? '1' : '0');
+}
+
+export async function setTone(tone: ToneOption): Promise<void> {
+  const userId = await getSupabaseUserId();
+  if (userId) return upsertRow(userId, { tone });
+  await setItem(TONE_KEY, tone);
+}
+
 export async function setLength(length: LengthOption): Promise<void> {
+  const userId = await getSupabaseUserId();
+  if (userId) return upsertRow(userId, { length });
   await setItem(LENGTH_KEY, length);
 }
 
+export async function clearStyleData(): Promise<void> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    return upsertRow(userId, {
+      style_mode: 'default',
+      style_guide: '',
+      style_samples: [],
+      emoji_enabled: true,
+    });
+  }
+  await multiRemove([STYLE_MODE_KEY, STYLE_GUIDE_KEY, STYLE_SAMPLES_KEY, EMOJI_ENABLED_KEY]);
+}
+
+// ---------- Helpers ----------
 export async function getActiveStyleGuide(): Promise<string> {
   const mode = await getStyleMode();
   if (mode !== 'custom') return '';

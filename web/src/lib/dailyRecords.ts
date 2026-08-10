@@ -1,4 +1,6 @@
 import { getItem, setItem } from './storage';
+import { supabase } from './supabase';
+import { getSupabaseUserId } from './session';
 
 const DAILY_RECORDS_KEY = 'daily_records_v1';
 
@@ -31,10 +33,46 @@ export type DailyRecord = {
   healthNote: string;
   aiDraft: string;
   teacherFinal: string;
-  photos: string[]; // data URL or base64
+  photos: string[]; // data URL 배열. 추후 Storage 경로로 마이그레이션 예정
   createdAt: string;
   updatedAt: string;
 };
+
+type Row = {
+  id: string;
+  child_id: string;
+  child_name: string;
+  class_name: string;
+  date: string;
+  activities: Activity[] | null;
+  meal_note: string | null;
+  nap_note: string | null;
+  health_note: string | null;
+  ai_draft: string | null;
+  teacher_final: string | null;
+  photos: string[] | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function fromRow(r: Row): DailyRecord {
+  return {
+    id: r.id,
+    childId: r.child_id,
+    childName: r.child_name,
+    className: r.class_name,
+    date: r.date,
+    activities: r.activities ?? [],
+    mealNote: r.meal_note ?? '',
+    napNote: r.nap_note ?? '',
+    healthNote: r.health_note ?? '',
+    aiDraft: r.ai_draft ?? '',
+    teacherFinal: r.teacher_final ?? '',
+    photos: r.photos ?? [],
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
 
 export function getTodayKey(): string {
   const now = new Date();
@@ -54,6 +92,94 @@ export function makeEmptyActivity(): Activity {
 }
 
 export async function getAllDailyRecords(): Promise<DailyRecord[]> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const { data, error } = await supabase
+      .from('daily_records')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: false });
+    if (error) {
+      console.error('[dailyRecords.getAll]', error);
+      return [];
+    }
+    return (data as Row[]).map(fromRow);
+  }
+  return getAllLocal();
+}
+
+export async function saveDailyRecord(
+  record: Omit<DailyRecord, 'id' | 'createdAt' | 'updatedAt'> & { photos?: string[] }
+): Promise<DailyRecord> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const payload = {
+      user_id: userId,
+      child_id: record.childId,
+      child_name: record.childName,
+      class_name: record.className,
+      date: record.date,
+      activities: record.activities,
+      meal_note: record.mealNote,
+      nap_note: record.napNote,
+      health_note: record.healthNote,
+      ai_draft: record.aiDraft,
+      teacher_final: record.teacherFinal,
+      photos: record.photos ?? [],
+    };
+    const { data, error } = await supabase
+      .from('daily_records')
+      .upsert(payload, { onConflict: 'user_id,child_id,date' })
+      .select('*')
+      .single();
+    if (error || !data) throw error ?? new Error('알림장 저장 실패');
+    return fromRow(data as Row);
+  }
+  return saveLocal(record);
+}
+
+export async function getDailyRecord(
+  childId: string,
+  date: string
+): Promise<DailyRecord | null> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const { data, error } = await supabase
+      .from('daily_records')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('child_id', childId)
+      .eq('date', date)
+      .maybeSingle();
+    if (error) {
+      console.error('[dailyRecords.get]', error);
+      return null;
+    }
+    return data ? fromRow(data as Row) : null;
+  }
+  const records = await getAllLocal();
+  return records.find((r) => r.childId === childId && r.date === date) ?? null;
+}
+
+export async function deleteDailyRecord(childId: string, date: string): Promise<void> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const { error } = await supabase
+      .from('daily_records')
+      .delete()
+      .eq('user_id', userId)
+      .eq('child_id', childId)
+      .eq('date', date);
+    if (error) throw error;
+    return;
+  }
+  const records = await getAllLocal();
+  const filtered = records.filter((r) => !(r.childId === childId && r.date === date));
+  await setItem(DAILY_RECORDS_KEY, JSON.stringify(filtered));
+}
+
+// ---------- localStorage (게스트 모드) ----------
+async function getAllLocal(): Promise<DailyRecord[]> {
   const raw = await getItem(DAILY_RECORDS_KEY);
   if (!raw) return [];
   try {
@@ -80,10 +206,10 @@ export async function getAllDailyRecords(): Promise<DailyRecord[]> {
   }
 }
 
-export async function saveDailyRecord(
+async function saveLocal(
   record: Omit<DailyRecord, 'id' | 'createdAt' | 'updatedAt'> & { photos?: string[] }
 ): Promise<DailyRecord> {
-  const records = await getAllDailyRecords();
+  const records = await getAllLocal();
   const now = new Date().toISOString();
 
   const idx = records.findIndex(
@@ -112,15 +238,4 @@ export async function saveDailyRecord(
 
   await setItem(DAILY_RECORDS_KEY, JSON.stringify(records));
   return saved;
-}
-
-export async function getDailyRecord(childId: string, date: string): Promise<DailyRecord | null> {
-  const records = await getAllDailyRecords();
-  return records.find((r) => r.childId === childId && r.date === date) ?? null;
-}
-
-export async function deleteDailyRecord(childId: string, date: string): Promise<void> {
-  const records = await getAllDailyRecords();
-  const filtered = records.filter((r) => !(r.childId === childId && r.date === date));
-  await setItem(DAILY_RECORDS_KEY, JSON.stringify(filtered));
 }
