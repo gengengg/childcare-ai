@@ -31,7 +31,7 @@ export function VerifyCodePanel({
 
   const handleVerify = async () => {
     if (code.length < 6) {
-      toast.show('6자리 코드를 입력해 주세요');
+      toast.show('메일에서 받은 코드를 정확히 입력해 주세요');
       return;
     }
     setBusy(true);
@@ -77,7 +77,7 @@ export function VerifyCodePanel({
     <div className="min-h-full flex flex-col justify-center py-8 px-6">
       <div className="card">
         <p className="text-[14px] font-bold text-ink mb-2">
-          이메일로 온 6자리 코드를 입력해 주세요
+          이메일로 온 확인 코드를 입력해 주세요
         </p>
         <p className="text-[13px] text-subtle leading-relaxed mb-4">
           <span className="font-medium text-ink">{email}</span> 로 확인 코드를 보냈어요.
@@ -87,11 +87,11 @@ export function VerifyCodePanel({
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"
-          maxLength={6}
-          className="field-input text-center tracking-[0.5em] text-[20px] font-bold"
-          placeholder="000000"
+          maxLength={10}
+          className="field-input text-center tracking-[0.4em] text-[20px] font-bold"
+          placeholder="코드 입력"
           value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
           disabled={busy}
           autoFocus
           onKeyDown={(e) => {
