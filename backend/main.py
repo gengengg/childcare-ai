@@ -1009,210 +1009,210 @@ def _saturday_has_content(days: dict, evaluations: dict) -> bool:
 def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
     """
     원본 PDF 레이아웃(A4 세로, 라벨+6일 컬럼)을 그대로 재현.
-    - Page 1: 최상단 통합 헤더 + 정보 3행 + 요일별 활동 표
-    - Page 2: 총평 표 + 투약/출석/청결 표
-    - 토요일에 아무 기록 없으면: 등원 슬롯 토 열에 "등원하는 영아가 없음" 표시, 총평 표에 토 행 제외
+    - 하나의 큰 표에 제목/정보/활동을 모두 배치 (PDF와 동일)
+    - 토요일 비활성 시 토 컬럼 전체를 세로 병합해 "등원하는 영아가 없음" 한 번만 표시
+    - 페이지 2: 총평 표 + 투약/출석/청결
     """
     sat_active = _saturday_has_content(req.days, req.evaluations)
     doc = Document()
     section = doc.sections[0]
-    section.page_width = Cm(21)      # A4 세로
+    section.page_width = Cm(21)
     section.page_height = Cm(29.7)
     section.top_margin = Cm(1.0)
     section.bottom_margin = Cm(1.0)
-    section.left_margin = Cm(1.2)
-    section.right_margin = Cm(1.2)
+    section.left_margin = Cm(1.0)
+    section.right_margin = Cm(1.0)
 
-    cols = 1 + len(_WEEK_ORDER) + 2  # 라벨 + 6일 + (담임/원장)
-    # 실제로 사용할 열: 라벨(0) + 요일 6개(1~6). 담임/원장은 첫 행에만.
-    n_cols = 1 + len(_WEEK_ORDER)  # = 7
+    n_days = len(_WEEK_ORDER)  # 6
+    n_cols = 1 + n_days         # 라벨 + 월~토 = 7
 
-    # ── 헤더 행 하나짜리 표 (제목 + 담임/원장) ──
-    # 하나의 큰 표 안에 다 넣어야 원본처럼 붙어보임.
-    # 여기서는 정보표 + 활동표를 하나로 통합.
-    total_data_rows = 3  # 놀이주제, 예상놀이, 교사기대
-    total_activity_rows = 1 + len(_STANDARD_SLOTS)  # 헤더 + 10 슬롯
-    total_rows = 1 + total_data_rows + total_activity_rows  # +1 for title row
+    # ── 컬럼 폭 (PDF 실측 기반) ──
+    # PDF: 라벨 94pt, 요일 각 79pt, 마지막 토 52pt (총 566pt)
+    # A4 세로 여백 제외 폭 ≈ 19cm → 라벨 3.2 / 월~금 각 2.65 / 토 1.75
+    label_w = Cm(3.2)
+    day_w = Cm(2.65)
+    sat_w = Cm(1.75)
+    def _apply_widths(row):
+        row.cells[0].width = label_w
+        for i in range(1, n_cols - 1):
+            row.cells[i].width = day_w
+        row.cells[n_cols - 1].width = sat_w
+
+    # ── 대형 통합 표: 제목 + 정보 3행 + 요일헤더 + 10슬롯 ──
+    activity_rows = len(_STANDARD_SLOTS)  # 10
+    # 등원(0), 손씻기(1), 오전자유놀이(2), 실외놀이(3), 점심(4), 특별활동(5),
+    # 낮잠(6), 오후간식(7), 오후자유놀이(8), 통합보육(9)
+    total_rows = 1 + 3 + 1 + activity_rows  # title + info×3 + dayHeader + 10
     tbl = doc.add_table(rows=total_rows, cols=n_cols)
     tbl.style = "Table Grid"
-
-    # 열 너비: 라벨 좀 넓게, 요일은 균등
-    label_w = Cm(3.0)
-    total_w = Cm(21 - 2.4)  # 좌우 마진 제외
-    day_w = Cm((21 - 2.4 - 3.0) / len(_WEEK_ORDER))
     for r in tbl.rows:
-        r.cells[0].width = label_w
-        for i in range(1, n_cols):
-            r.cells[i].width = day_w
+        _apply_widths(r)
 
-    # (0) 제목 행 — 전체 셀 병합 후 제목 넣기
+    # (0) 제목 (전체 병합)
     title_row = tbl.rows[0]
-    merged = title_row.cells[0]
+    m = title_row.cells[0]
     for i in range(1, n_cols):
-        merged = merged.merge(title_row.cells[i])
-    title_text = f"<{req.year}년 {req.month}월 {req.week_number}주>  {req.class_name or '반'} 보  육  일  지"
+        m = m.merge(title_row.cells[i])
+    title_text = f"<{req.year}년 {req.month}월 {req.week_number}주> {req.class_name or '반'} 보  육  일  지"
     if req.age_group:
-        title_text += f"    ({req.age_group})"
-    _set_cell(merged, title_text, bold=True, center=True, size=13)
+        title_text += f"  ({req.age_group})"
+    _set_cell(m, title_text, bold=True, center=True, size=13)
     _set_row_min_height(title_row, Cm(1.1))
 
-    # 담임/원장은 제목 표 오른쪽에 별도로 붙이기 어려우니, 다음 행 이후에 정보 표시
-    # 원본을 최대한 따라하려면 제목 표를 좌우 분할해야 하지만 복잡. 여기서는 제목 아래에 담임/원장 짧게 배치.
-    # → 방식 변경: 제목 셀 내부에 담임/원장 텍스트 우측 정렬로 붙임
-    # (간단함을 위해 별도 처리 생략, 상단 정보표 시작)
-
-    # (1~3) 놀이 주제 / 예상 놀이 / 교사 기대
-    def _info_row(r_idx: int, label: str, value: str):
+    # (1~3) 정보 행: 놀이 주제 / 예상 놀이 / 교사 기대
+    def _info_row(r_idx: int, label: str, value: str, min_h: float = 0.9):
         row = tbl.rows[r_idx]
         _set_cell(row.cells[0], label, bold=True, center=True, size=10)
         m = row.cells[1]
         for i in range(2, n_cols):
             m = m.merge(row.cells[i])
         _set_cell(m, value or "", size=10)
-        _set_row_min_height(row, Cm(0.8))
+        _set_row_min_height(row, Cm(min_h))
 
     _info_row(1, "놀이 주제", req.theme)
     _info_row(2, "예상 놀이", req.subtheme)
-    _info_row(3, "교사의 기대", req.expectations)
-
-    # 담임/원장 정보는 교사기대 셀 오른쪽에 붙이기 애매하므로 상단 제목 아래 별도로 배치
-    # → 제목 행 텍스트에 이미 반과 학기가 있으므로 담임/원장은 표 위에 별도 문단으로
-    # 사실 원본에서는 헤더 행 오른쪽에 붙어있음. 여기서는 정보표 다음에 별도 한 행 추가하는 방식으로.
-    # 하지만 이미 표 구조 확정. 담임/원장은 문서 상단(제목 위)에 우측 정렬로 넣는 게 깔끔.
-    # (아래에서 문서 시작부에 삽입하는 대신, 여기서 헤더 셀에 붙임)
+    _info_row(3, "교사의 기대", req.expectations, min_h=1.1)
 
     # (4) 요일 헤더 행
     day_header_idx = 4
     day_row = tbl.rows[day_header_idx]
-    _set_cell(day_row.cells[0], "요일\n\n활 동", bold=True, center=True, size=9)
+    _set_cell(day_row.cells[0], "요일\n활 동", bold=True, center=True, size=10)
     for i, day in enumerate(_WEEK_ORDER):
         date = req.dates.get(day, "") if isinstance(req.dates, dict) else ""
         header = f"{date[5:]}({day})" if date else day
         _set_cell(day_row.cells[1 + i], header, bold=True, center=True, size=9)
     _set_row_min_height(day_row, Cm(0.9))
 
-    # (5~) 시간대별 행
+    # ── 슬롯 행들 (10개) ──
+    # 각 슬롯의 첫 행 인덱스 저장 → 나중에 토 컬럼 세로 병합에 사용
+    slot_row_indices = []
     for slot_i, (label, standard) in enumerate(_STANDARD_SLOTS):
         r_idx = day_header_idx + 1 + slot_i
+        slot_row_indices.append(r_idx)
         row = tbl.rows[r_idx]
 
         if label == "__MORNING_FREE__":
-            _set_cell(row.cells[0], "오 전\n자 유\n놀 이\n(09:30~\n10:30)", bold=True, center=True, size=9)
-            # 원본처럼: 모든 요일의 활동을 통합해 병합 셀에 불릿 리스트로
+            _set_cell(row.cells[0], "오 전\n자 유\n놀 이\n(09:30~\n10:30)",
+                      bold=True, center=True, size=9)
             all_activities = _collect_unique(req.days, "morningFree")
+            # 월~금 병합 (토 활성이면 월~토 병합)
+            end_col = n_cols if sat_active else n_cols - 1
             m = row.cells[1]
-            for i in range(2, n_cols):
+            for i in range(2, end_col):
                 m = m.merge(row.cells[i])
-            _set_cell(m, _as_bullets(all_activities), size=9)
-            _set_row_min_height(row, Cm(3.5))
+            _set_cell(m, _as_bullets(all_activities) or "-", size=9)
+            _set_row_min_height(row, Cm(4.5))
         elif label == "__OUTDOOR__":
-            _set_cell(row.cells[0], "실외놀이 및\n대체활동\n(10:30~\n11:40)", bold=True, center=True, size=9)
+            _set_cell(row.cells[0], "실외놀이 및\n대체활동\n(10:30~\n11:40)",
+                      bold=True, center=True, size=9)
             all_outdoor = _collect_unique(req.days, "outdoor")
+            end_col = n_cols if sat_active else n_cols - 1
             m = row.cells[1]
-            for i in range(2, n_cols):
+            for i in range(2, end_col):
                 m = m.merge(row.cells[i])
-            # 활동 리스트 + 요일별 (O) 마크
-            marks = []
-            for day in _WEEK_ORDER:
-                content = _get_slot(req.days, day, "outdoor").strip()
-                marks.append(f"{day}({'O' if content else ' '})")
-            body = _as_bullets(all_outdoor)
+            marks_days = _WEEK_ORDER if sat_active else _WEEK_ORDER[:-1]
+            marks = " ".join(
+                f"{d}({'O' if _get_slot(req.days, d, 'outdoor').strip() else ' '})"
+                for d in marks_days
+            )
+            body = _as_bullets(all_outdoor) or "-"
             if all_outdoor:
-                body += "\n\n실시 요일: " + " ".join(marks)
+                body += "\n\n실시: " + marks
             _set_cell(m, body, size=9)
             _set_row_min_height(row, Cm(2.5))
         elif label == "__SPECIAL__":
-            _set_cell(row.cells[0], "특별활동\n(12:10~\n12:40)", bold=True, center=True, size=9)
-            # 특별활동은 요일별로 다를 수 있음 → 각 셀에 개별 표시
-            for i, day in enumerate(_WEEK_ORDER):
+            _set_cell(row.cells[0], "특별활동\n(12:10~\n12:40)",
+                      bold=True, center=True, size=9)
+            # 요일별 개별 셀 (PDF와 동일)
+            day_count = n_days if sat_active else n_days - 1
+            for i in range(day_count):
+                day = _WEEK_ORDER[i]
                 content = _get_slot(req.days, day, "special").strip()
-                _set_cell(row.cells[1 + i], content, center=True, size=9)
-            _set_row_min_height(row, Cm(1.2))
+                mark = "(O)" if content else ""
+                text = f"{content}\n{mark}" if content else ""
+                _set_cell(row.cells[1 + i], text, center=True, size=9)
+            _set_row_min_height(row, Cm(1.3))
         else:
             _set_cell(row.cells[0], label, bold=True, center=True, size=9)
-            if sat_active:
-                # 토도 활성: 월~토 전체 병합
-                m = row.cells[1]
-                for i in range(2, n_cols):
-                    m = m.merge(row.cells[i])
-                _set_cell(m, standard or "", size=9)
-            else:
-                # 토 비활성: 월~금(1~5) 병합, 토(6) 별도
-                m = row.cells[1]
-                for i in range(2, n_cols - 1):
-                    m = m.merge(row.cells[i])
-                _set_cell(m, standard or "", size=9)
-                # 첫 등원 슬롯의 토 셀에만 "등원하는 영아가 없음", 나머지는 공백
-                sat_note = "등원하는\n영아가\n없음" if slot_i == 0 else ""
-                _set_cell(row.cells[n_cols - 1], sat_note, center=True, size=8)
-            _set_row_min_height(row, Cm(1.0))
+            end_col = n_cols if sat_active else n_cols - 1
+            m = row.cells[1]
+            for i in range(2, end_col):
+                m = m.merge(row.cells[i])
+            _set_cell(m, standard or "", size=9)
+            _set_row_min_height(row, Cm(1.1))
 
-    # 담임/원장 정보는 표 위에 별도 문단으로 배치
-    # (위에서 이미 첫 번째 요소가 title 표라 add_paragraph 로는 위로 넣기 어려움)
-    # 대신 표 앞에 문단을 삽입.
+    # ── 토요일 비활성일 때: 토 컬럼 전체를 세로 병합해 한 셀로 ──
+    if not sat_active:
+        sat_col_idx = n_cols - 1
+        first_sat_cell = tbl.rows[slot_row_indices[0]].cells[sat_col_idx]
+        for r_idx in slot_row_indices[1:]:
+            first_sat_cell = first_sat_cell.merge(tbl.rows[r_idx].cells[sat_col_idx])
+        # 세로 방향 텍스트처럼 각 글자마다 줄바꿈
+        _set_cell(first_sat_cell, "등\n원\n하\n는\n\n영\n아\n가\n\n없\n음",
+                  bold=True, center=True, size=10)
+
+    # 담임/원장은 표 상단 우측에
     _insert_top_signatures(doc, req.teacher_name, req.director_name)
 
     # ── 페이지 나누기 ──
     doc.add_page_break()
 
     # ── 총평 및 활동평가 표 ──
-    # 원본: 첫 열 "총평 및 활동평가 특이사항 등" 병합, 둘째 열 요일 문자, 셋째 열 서술
-    # 토는 활성일 때만 포함
     eval_days = ["월", "화", "수", "목", "금"]
     if sat_active:
         eval_days.append("토")
     eval_table = doc.add_table(rows=len(eval_days), cols=3)
     eval_table.style = "Table Grid"
 
-    # 첫 열 병합
     first_col_cells = [eval_table.rows[i].cells[0] for i in range(len(eval_days))]
     merged_first = first_col_cells[0]
     for c in first_col_cells[1:]:
         merged_first = merged_first.merge(c)
-    _set_cell(merged_first, "총평 및\n활동평가\n특이사항 등", bold=True, center=True, size=10)
+    _set_cell(merged_first, "총평 및\n활동평가\n특이사항 등",
+              bold=True, center=True, size=10)
 
     for i, day in enumerate(eval_days):
         r = eval_table.rows[i]
-        r.cells[0].width = Cm(2.5)
-        r.cells[1].width = Cm(1.2)
-        r.cells[2].width = Cm(14.5)
+        r.cells[0].width = Cm(2.4)
+        r.cells[1].width = Cm(1.0)
+        r.cells[2].width = Cm(15.6)
         _set_cell(r.cells[1], day, bold=True, center=True, size=10)
         text = str(req.evaluations.get(day, "") or "").strip() if isinstance(req.evaluations, dict) else ""
         _set_cell(r.cells[2], text, size=9)
         _set_row_min_height(r, Cm(3.2))
 
-    # ── 하단: 투약/출석/청결 표 ──
+    # ── 하단: 투약/출석/청결 (원본과 동일) ──
     doc.add_paragraph()
-    bottom = doc.add_table(rows=3, cols=1 + len(_WEEK_ORDER))
+    bottom_cols = 1 + n_days
+    bottom = doc.add_table(rows=3, cols=bottom_cols)
     bottom.style = "Table Grid"
-    bottom.rows[0].cells[0].width = Cm(3.0)
-    for i in range(1, 1 + len(_WEEK_ORDER)):
-        bottom.rows[0].cells[i].width = day_w
+    for row in bottom.rows:
+        row.cells[0].width = Cm(2.8)
+        for i in range(1, n_days):
+            row.cells[i].width = Cm(2.65)
+        row.cells[bottom_cols - 1].width = Cm(1.75)
 
-    # 투약일지 헤더 (전체 병합)
     r0 = bottom.rows[0]
     _set_cell(r0.cells[0], "투 약 일 지", bold=True, center=True, size=10)
     m = r0.cells[1]
-    for i in range(2, 1 + len(_WEEK_ORDER)):
+    for i in range(2, bottom_cols):
         m = m.merge(r0.cells[i])
     _set_cell(m, "", size=9)
+    _set_row_min_height(r0, Cm(1.5))
 
-    # 출석(결석)
     r1 = bottom.rows[1]
     _set_cell(r1.cells[0], "출석(결석)", bold=True, center=True, size=10)
-    for i in range(len(_WEEK_ORDER)):
+    for i in range(n_days):
         _set_cell(r1.cells[1 + i], "", center=True, size=9)
+    _set_row_min_height(r1, Cm(0.9))
 
-    # 실 내 청 결
     r2 = bottom.rows[2]
     _set_cell(r2.cells[0], "실 내 청 결", bold=True, center=True, size=10)
     m = r2.cells[1]
-    for i in range(2, 1 + len(_WEEK_ORDER)):
+    for i in range(2, bottom_cols):
         m = m.merge(r2.cells[i])
     _set_cell(m, "*교실 / 화장실 청소\n*자체소독 – 교실 / 교구장 및 놀잇감\n*침구(가정으로 보내기)", size=9)
-
-    for r in bottom.rows:
-        _set_row_min_height(r, Cm(1.0))
+    _set_row_min_height(r2, Cm(1.5))
 
     buf = io.BytesIO()
     doc.save(buf)
