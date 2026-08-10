@@ -341,11 +341,31 @@ export function WeeklyDiaryScreen() {
         </button>
       </div>
 
+      {/* 요일 바로가기 — 스크롤 시 상단 고정 */}
+      <div className="sticky top-0 z-30 -mx-5 px-5 py-2 mb-3 bg-cream-50/95 backdrop-blur border-b border-cream-200">
+        <div className="flex gap-1.5 overflow-x-auto">
+          {visibleDays.map((day) => (
+            <button
+              key={day}
+              onClick={() => {
+                document
+                  .getElementById(`day-${day}`)
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="flex-1 min-w-[44px] py-1.5 rounded-xl bg-surface border border-cream-200 text-[13px] font-bold text-clay-700 hover:bg-clay-500 hover:text-white hover:border-clay-500 transition"
+            >
+              {day}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {visibleDays.map((day) => {
         const date = dates[day];
         const slots = days[day] ?? emptyDaySlots();
         return (
-          <Card key={day} className="mb-4" hint={`${day}요일 · ${date}`}>
+          <div key={day} id={`day-${day}`} className="scroll-mt-16">
+          <Card className="mb-4" hint={`${day}요일 · ${date}`}>
             <div className="space-y-3">
               <div>
                 <p className="text-[11px] font-semibold text-subtle mb-1">
@@ -393,6 +413,7 @@ export function WeeklyDiaryScreen() {
               </div>
             </div>
           </Card>
+          </div>
         );
       })}
 
