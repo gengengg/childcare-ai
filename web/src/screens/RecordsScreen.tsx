@@ -6,6 +6,7 @@ import { Header } from '@/components/Header';
 import { useToast } from '@/components/Toast';
 import { CalendarIcon, CopyIcon, FolderIcon, TrashIcon } from '@/components/icons';
 import { Mascot } from '@/components/Mascot';
+import { SkeletonListItem } from '@/components/Skeleton';
 import {
   deleteDailyRecord,
   getAllDailyRecords,
@@ -27,15 +28,20 @@ export function RecordsScreen() {
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [filterChild, setFilterChild] = useState<string>('');
   const [openId, setOpenId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const list = await getAllDailyRecords();
-    // 최신 날짜, 최신 저장 순
-    list.sort((a, b) => {
-      if (a.date !== b.date) return a.date > b.date ? -1 : 1;
-      return (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '');
-    });
-    setRecords(list);
+    setLoading(true);
+    try {
+      const list = await getAllDailyRecords();
+      list.sort((a, b) => {
+        if (a.date !== b.date) return a.date > b.date ? -1 : 1;
+        return (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '');
+      });
+      setRecords(list);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -119,7 +125,13 @@ export function RecordsScreen() {
         </div>
       )}
 
-      {groupedByDate.length === 0 ? (
+      {loading ? (
+        <Card>
+          <SkeletonListItem />
+          <SkeletonListItem />
+          <SkeletonListItem />
+        </Card>
+      ) : groupedByDate.length === 0 ? (
         <Card>
           <div className="flex flex-col items-center py-8">
             <Mascot variant="sleep" size={80} className="mb-3" />

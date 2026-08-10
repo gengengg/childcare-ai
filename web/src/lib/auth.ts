@@ -15,6 +15,20 @@ export async function exitGuestMode(): Promise<void> {
   await removeItem(GUEST_KEY);
 }
 
+/**
+ * Google OAuth 로그인. Supabase 프로젝트에 Google Provider 활성화 필요.
+ * 팝업 아닌 리다이렉트 방식.
+ */
+export async function signInWithGoogle(): Promise<void> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin,
+    },
+  });
+  if (error) throw error;
+}
+
 export async function signInWithMagicLink(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({
     email,

@@ -26,6 +26,7 @@ import {
   saveMonthlyPlan,
   type MonthlyPlan,
 } from '@/lib/monthlyPlans';
+import { SkeletonLines } from '@/components/Skeleton';
 
 /**
  * '주간일지' 탭의 홈 화면.
@@ -206,7 +207,7 @@ export function WeeklyHubScreen() {
           }}
         />
         {planLoading ? (
-          <p className="text-subtle text-[13px] py-3 text-center">불러오는 중…</p>
+          <SkeletonLines lines={2} />
         ) : plan ? (
           <div>
             {plan.theme && (
