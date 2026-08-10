@@ -993,135 +993,253 @@ _STANDARD_SLOTS = [
 
 
 def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
+    """
+    원본 PDF 레이아웃(A4 세로, 라벨+6일 컬럼)을 그대로 재현.
+    - Page 1: 최상단 통합 헤더 + 정보 3행 + 요일별 활동 표
+    - Page 2: 총평 표 + 투약/출석/청결 표
+    """
     doc = Document()
     section = doc.sections[0]
-    # 가로 방향(A4 landscape) — 요일 6개 컬럼 담기 위해
-    section.page_width = Cm(29.7)
-    section.page_height = Cm(21)
-    section.top_margin = Cm(1.2)
-    section.bottom_margin = Cm(1.2)
+    section.page_width = Cm(21)      # A4 세로
+    section.page_height = Cm(29.7)
+    section.top_margin = Cm(1.0)
+    section.bottom_margin = Cm(1.0)
     section.left_margin = Cm(1.2)
     section.right_margin = Cm(1.2)
 
-    # 제목
-    title_para = doc.add_paragraph()
-    title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title_para.paragraph_format.space_after = Pt(6)
-    title_run = title_para.add_run(
-        f"<{req.year}년 {req.month}월 {req.week_number}주> "
-        f"{req.class_name or '반'} 보  육  일  지"
-    )
-    title_run.font.name = "맑은 고딕"
-    title_run.font.size = Pt(15)
-    title_run.font.bold = True
-    _force_east_asia_font(title_run, "맑은 고딕")
+    cols = 1 + len(_WEEK_ORDER) + 2  # 라벨 + 6일 + (담임/원장)
+    # 실제로 사용할 열: 라벨(0) + 요일 6개(1~6). 담임/원장은 첫 행에만.
+    n_cols = 1 + len(_WEEK_ORDER)  # = 7
 
+    # ── 헤더 행 하나짜리 표 (제목 + 담임/원장) ──
+    # 하나의 큰 표 안에 다 넣어야 원본처럼 붙어보임.
+    # 여기서는 정보표 + 활동표를 하나로 통합.
+    total_data_rows = 3  # 놀이주제, 예상놀이, 교사기대
+    total_activity_rows = 1 + len(_STANDARD_SLOTS)  # 헤더 + 10 슬롯
+    total_rows = 1 + total_data_rows + total_activity_rows  # +1 for title row
+    tbl = doc.add_table(rows=total_rows, cols=n_cols)
+    tbl.style = "Table Grid"
+
+    # 열 너비: 라벨 좀 넓게, 요일은 균등
+    label_w = Cm(3.0)
+    total_w = Cm(21 - 2.4)  # 좌우 마진 제외
+    day_w = Cm((21 - 2.4 - 3.0) / len(_WEEK_ORDER))
+    for r in tbl.rows:
+        r.cells[0].width = label_w
+        for i in range(1, n_cols):
+            r.cells[i].width = day_w
+
+    # (0) 제목 행 — 전체 셀 병합 후 제목 넣기
+    title_row = tbl.rows[0]
+    merged = title_row.cells[0]
+    for i in range(1, n_cols):
+        merged = merged.merge(title_row.cells[i])
+    title_text = f"<{req.year}년 {req.month}월 {req.week_number}주>  {req.class_name or '반'} 보  육  일  지"
     if req.age_group:
-        sub = doc.add_paragraph()
-        sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r = sub.add_run(f"({req.age_group})")
-        r.font.name = "맑은 고딕"
-        r.font.size = Pt(11)
-        _force_east_asia_font(r, "맑은 고딕")
+        title_text += f"    ({req.age_group})"
+    _set_cell(merged, title_text, bold=True, center=True, size=13)
+    _set_row_min_height(title_row, Cm(1.1))
 
-    # ── 상단 정보 표 ────────────────────────────────────
-    info_table = doc.add_table(rows=4, cols=4)
-    info_table.style = "Table Grid"
-    _set_cell(info_table.rows[0].cells[0], "담임", bold=True, center=True, size=10)
-    _set_cell(info_table.rows[0].cells[1], req.teacher_name, center=True, size=10)
-    _set_cell(info_table.rows[0].cells[2], "원장", bold=True, center=True, size=10)
-    _set_cell(info_table.rows[0].cells[3], req.director_name, center=True, size=10)
+    # 담임/원장은 제목 표 오른쪽에 별도로 붙이기 어려우니, 다음 행 이후에 정보 표시
+    # 원본을 최대한 따라하려면 제목 표를 좌우 분할해야 하지만 복잡. 여기서는 제목 아래에 담임/원장 짧게 배치.
+    # → 방식 변경: 제목 셀 내부에 담임/원장 텍스트 우측 정렬로 붙임
+    # (간단함을 위해 별도 처리 생략, 상단 정보표 시작)
 
-    _set_cell(info_table.rows[1].cells[0], "놀이 주제", bold=True, center=True, size=10)
-    m = info_table.rows[1].cells[1].merge(info_table.rows[1].cells[2]).merge(info_table.rows[1].cells[3])
-    _set_cell(m, req.theme, size=10)
+    # (1~3) 놀이 주제 / 예상 놀이 / 교사 기대
+    def _info_row(r_idx: int, label: str, value: str):
+        row = tbl.rows[r_idx]
+        _set_cell(row.cells[0], label, bold=True, center=True, size=10)
+        m = row.cells[1]
+        for i in range(2, n_cols):
+            m = m.merge(row.cells[i])
+        _set_cell(m, value or "", size=10)
+        _set_row_min_height(row, Cm(0.8))
 
-    _set_cell(info_table.rows[2].cells[0], "예상 놀이", bold=True, center=True, size=10)
-    m = info_table.rows[2].cells[1].merge(info_table.rows[2].cells[2]).merge(info_table.rows[2].cells[3])
-    _set_cell(m, req.subtheme, size=10)
+    _info_row(1, "놀이 주제", req.theme)
+    _info_row(2, "예상 놀이", req.subtheme)
+    _info_row(3, "교사의 기대", req.expectations)
 
-    _set_cell(info_table.rows[3].cells[0], "교사의 기대", bold=True, center=True, size=10)
-    m = info_table.rows[3].cells[1].merge(info_table.rows[3].cells[2]).merge(info_table.rows[3].cells[3])
-    _set_cell(m, req.expectations, size=10)
+    # 담임/원장 정보는 교사기대 셀 오른쪽에 붙이기 애매하므로 상단 제목 아래 별도로 배치
+    # → 제목 행 텍스트에 이미 반과 학기가 있으므로 담임/원장은 표 위에 별도 문단으로
+    # 사실 원본에서는 헤더 행 오른쪽에 붙어있음. 여기서는 정보표 다음에 별도 한 행 추가하는 방식으로.
+    # 하지만 이미 표 구조 확정. 담임/원장은 문서 상단(제목 위)에 우측 정렬로 넣는 게 깔끔.
+    # (아래에서 문서 시작부에 삽입하는 대신, 여기서 헤더 셀에 붙임)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(4)
-
-    # ── 요일별 활동 표 (요일 x 시간대) ─────────────────
-    # 열: 시간대 라벨 + 6일
-    cols = 1 + len(_WEEK_ORDER)
-    rows = 1 + len(_STANDARD_SLOTS)  # 1 header + 10 slots
-    act_table = doc.add_table(rows=rows, cols=cols)
-    act_table.style = "Table Grid"
-
-    # 헤더 행
-    _set_cell(act_table.rows[0].cells[0], "요일\n활동", bold=True, center=True, size=9)
+    # (4) 요일 헤더 행
+    day_header_idx = 4
+    day_row = tbl.rows[day_header_idx]
+    _set_cell(day_row.cells[0], "요일\n\n활 동", bold=True, center=True, size=9)
     for i, day in enumerate(_WEEK_ORDER):
         date = req.dates.get(day, "") if isinstance(req.dates, dict) else ""
-        header = f"{date[5:] if date else ''}({day})" if date else day
-        _set_cell(act_table.rows[0].cells[1 + i], header, bold=True, center=True, size=9)
+        header = f"{date[5:]}({day})" if date else day
+        _set_cell(day_row.cells[1 + i], header, bold=True, center=True, size=9)
+    _set_row_min_height(day_row, Cm(0.9))
 
-    # 데이터 행
-    for row_i, (label, standard) in enumerate(_STANDARD_SLOTS, start=1):
-        row = act_table.rows[row_i]
-        # 슬롯 라벨
+    # (5~) 시간대별 행
+    for slot_i, (label, standard) in enumerate(_STANDARD_SLOTS):
+        r_idx = day_header_idx + 1 + slot_i
+        row = tbl.rows[r_idx]
+
         if label == "__MORNING_FREE__":
-            _set_cell(row.cells[0], "오 전\n자 유\n놀 이\n(09:30\n~10:30)", bold=True, center=True, size=9)
-            for i, day in enumerate(_WEEK_ORDER):
-                content = _get_slot(req.days, day, "morningFree")
-                _set_cell(row.cells[1 + i], content, size=9)
+            _set_cell(row.cells[0], "오 전\n자 유\n놀 이\n(09:30~\n10:30)", bold=True, center=True, size=9)
+            # 원본처럼: 모든 요일의 활동을 통합해 병합 셀에 불릿 리스트로
+            all_activities = _collect_unique(req.days, "morningFree")
+            m = row.cells[1]
+            for i in range(2, n_cols):
+                m = m.merge(row.cells[i])
+            _set_cell(m, _as_bullets(all_activities), size=9)
+            _set_row_min_height(row, Cm(3.5))
         elif label == "__OUTDOOR__":
-            _set_cell(row.cells[0], "실외놀이 및\n대체활동\n(10:30~11:40)", bold=True, center=True, size=9)
-            for i, day in enumerate(_WEEK_ORDER):
-                content = _get_slot(req.days, day, "outdoor")
-                _set_cell(row.cells[1 + i], content, size=9)
+            _set_cell(row.cells[0], "실외놀이 및\n대체활동\n(10:30~\n11:40)", bold=True, center=True, size=9)
+            all_outdoor = _collect_unique(req.days, "outdoor")
+            m = row.cells[1]
+            for i in range(2, n_cols):
+                m = m.merge(row.cells[i])
+            # 활동 리스트 + 요일별 (O) 마크
+            marks = []
+            for day in _WEEK_ORDER:
+                content = _get_slot(req.days, day, "outdoor").strip()
+                marks.append(f"{day}({'O' if content else ' '})")
+            body = _as_bullets(all_outdoor)
+            if all_outdoor:
+                body += "\n\n실시 요일: " + " ".join(marks)
+            _set_cell(m, body, size=9)
+            _set_row_min_height(row, Cm(2.5))
         elif label == "__SPECIAL__":
-            _set_cell(row.cells[0], "특별활동\n(12:10~12:40)", bold=True, center=True, size=9)
+            _set_cell(row.cells[0], "특별활동\n(12:10~\n12:40)", bold=True, center=True, size=9)
+            # 특별활동은 요일별로 다를 수 있음 → 각 셀에 개별 표시
             for i, day in enumerate(_WEEK_ORDER):
-                content = _get_slot(req.days, day, "special")
-                _set_cell(row.cells[1 + i], content, size=9)
+                content = _get_slot(req.days, day, "special").strip()
+                _set_cell(row.cells[1 + i], content, center=True, size=9)
+            _set_row_min_height(row, Cm(1.2))
         else:
             _set_cell(row.cells[0], label, bold=True, center=True, size=9)
-            # 표준 슬롯: 첫 셀에 표준 문구, 나머지 셀은 병합
-            merged = row.cells[1]
-            for i in range(2, cols):
-                merged = merged.merge(row.cells[i])
-            _set_cell(merged, standard or "", center=True, size=9)
+            m = row.cells[1]
+            for i in range(2, n_cols):
+                m = m.merge(row.cells[i])
+            _set_cell(m, standard or "", size=9)
+            _set_row_min_height(row, Cm(1.0))
 
-    # 표 열 너비 균등
-    label_w = Cm(2.8)
-    day_w = Cm((27.5 - 2.8) / len(_WEEK_ORDER))
-    for r in act_table.rows:
-        r.cells[0].width = label_w
-        for i in range(1, cols):
-            r.cells[i].width = day_w
-    _set_row_min_height(act_table.rows[0], Cm(0.8))
+    # 담임/원장 정보는 표 위에 별도 문단으로 배치
+    # (위에서 이미 첫 번째 요소가 title 표라 add_paragraph 로는 위로 넣기 어려움)
+    # 대신 표 앞에 문단을 삽입.
+    _insert_top_signatures(doc, req.teacher_name, req.director_name)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(4)
+    # ── 페이지 나누기 ──
+    doc.add_page_break()
 
-    # ── 총평 및 활동평가 표 ──────────────────────────
-    eval_para = doc.add_paragraph()
-    er = eval_para.add_run("총평 및 활동평가 · 특이사항")
-    er.font.name = "맑은 고딕"
-    er.font.bold = True
-    er.font.size = Pt(11)
-    _force_east_asia_font(er, "맑은 고딕")
-
-    eval_table = doc.add_table(rows=len(_WEEK_ORDER), cols=2)
+    # ── 총평 및 활동평가 표 ──
+    # 원본: 첫 열 "총평 및 활동평가 특이사항 등" 병합, 둘째 열 요일 문자, 셋째 열 서술
+    eval_days = [d for d in ["월", "화", "수", "목", "금"]]  # 원본은 토 없음
+    eval_table = doc.add_table(rows=len(eval_days), cols=3)
     eval_table.style = "Table Grid"
-    for i, day in enumerate(_WEEK_ORDER):
+
+    # 첫 열 병합
+    first_col_cells = [eval_table.rows[i].cells[0] for i in range(len(eval_days))]
+    merged_first = first_col_cells[0]
+    for c in first_col_cells[1:]:
+        merged_first = merged_first.merge(c)
+    _set_cell(merged_first, "총평 및\n활동평가\n특이사항 등", bold=True, center=True, size=10)
+
+    for i, day in enumerate(eval_days):
         r = eval_table.rows[i]
-        r.cells[0].width = Cm(1.5)
-        r.cells[1].width = Cm(26)
-        _set_cell(r.cells[0], day, bold=True, center=True, size=10)
-        text = ""
-        if isinstance(req.evaluations, dict):
-            text = str(req.evaluations.get(day, "") or "").strip()
-        _set_cell(r.cells[1], text, size=10)
-        _set_row_min_height(r, Cm(2.2))
+        r.cells[0].width = Cm(2.5)
+        r.cells[1].width = Cm(1.2)
+        r.cells[2].width = Cm(14.5)
+        _set_cell(r.cells[1], day, bold=True, center=True, size=10)
+        text = str(req.evaluations.get(day, "") or "").strip() if isinstance(req.evaluations, dict) else ""
+        _set_cell(r.cells[2], text, size=9)
+        _set_row_min_height(r, Cm(3.2))
+
+    # ── 하단: 투약/출석/청결 표 ──
+    doc.add_paragraph()
+    bottom = doc.add_table(rows=3, cols=1 + len(_WEEK_ORDER))
+    bottom.style = "Table Grid"
+    bottom.rows[0].cells[0].width = Cm(3.0)
+    for i in range(1, 1 + len(_WEEK_ORDER)):
+        bottom.rows[0].cells[i].width = day_w
+
+    # 투약일지 헤더 (전체 병합)
+    r0 = bottom.rows[0]
+    _set_cell(r0.cells[0], "투 약 일 지", bold=True, center=True, size=10)
+    m = r0.cells[1]
+    for i in range(2, 1 + len(_WEEK_ORDER)):
+        m = m.merge(r0.cells[i])
+    _set_cell(m, "", size=9)
+
+    # 출석(결석)
+    r1 = bottom.rows[1]
+    _set_cell(r1.cells[0], "출석(결석)", bold=True, center=True, size=10)
+    for i in range(len(_WEEK_ORDER)):
+        _set_cell(r1.cells[1 + i], "", center=True, size=9)
+
+    # 실 내 청 결
+    r2 = bottom.rows[2]
+    _set_cell(r2.cells[0], "실 내 청 결", bold=True, center=True, size=10)
+    m = r2.cells[1]
+    for i in range(2, 1 + len(_WEEK_ORDER)):
+        m = m.merge(r2.cells[i])
+    _set_cell(m, "*교실 / 화장실 청소\n*자체소독 – 교실 / 교구장 및 놀잇감\n*침구(가정으로 보내기)", size=9)
+
+    for r in bottom.rows:
+        _set_row_min_height(r, Cm(1.0))
 
     buf = io.BytesIO()
     doc.save(buf)
     return buf.getvalue()
+
+
+def _collect_unique(days: dict, key: str) -> list:
+    """모든 요일의 slot 값들을 라인 단위로 모아 중복 제거."""
+    seen: set = set()
+    out: list = []
+    if not isinstance(days, dict):
+        return out
+    for day in _WEEK_ORDER:
+        d = days.get(day)
+        if not isinstance(d, dict):
+            continue
+        text = str(d.get(key, "") or "")
+        for line in text.split("\n"):
+            line = line.strip().lstrip("- ").strip()
+            if line and line not in seen:
+                seen.add(line)
+                out.append(line)
+    return out
+
+
+def _as_bullets(items: list) -> str:
+    if not items:
+        return ""
+    return "\n".join(f"- {it}" for it in items)
+
+
+def _insert_top_signatures(doc: Document, teacher: str, director: str):
+    """
+    문서의 맨 앞(첫 요소보다 위)에 담임/원장 서명란을 우측 정렬 문단으로 추가.
+    (Document.paragraphs 조작으로 삽입)
+    """
+    from docx.oxml.ns import qn as _qn
+    body = doc.element.body
+    para = doc.paragraphs[0] if doc.paragraphs else None
+    new_p_xml = etree.SubElement(body, _qn("w:p"))
+    # 우측 정렬
+    pPr = etree.SubElement(new_p_xml, _qn("w:pPr"))
+    jc = etree.SubElement(pPr, _qn("w:jc"))
+    jc.set(_qn("w:val"), "right")
+    run = etree.SubElement(new_p_xml, _qn("w:r"))
+    rPr = etree.SubElement(run, _qn("w:rPr"))
+    sz = etree.SubElement(rPr, _qn("w:sz"))
+    sz.set(_qn("w:val"), "20")  # half-points
+    rFonts = etree.SubElement(rPr, _qn("w:rFonts"))
+    rFonts.set(_qn("w:eastAsia"), "맑은 고딕")
+    t = etree.SubElement(run, _qn("w:t"))
+    t.text = f"담임: {teacher or ''}      원장: {director or ''}"
+    t.set(_qn("xml:space"), "preserve")
+    # 방금 추가한 새 문단을 첫 요소 앞으로 이동
+    if para is not None:
+        body.remove(new_p_xml)
+        para._element.addprevious(new_p_xml)
 
 
 def _get_slot(days: dict, day: str, key: str) -> str:
