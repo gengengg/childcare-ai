@@ -1,0 +1,16 @@
+{
+  "name": "알림장 AI",
+  "short_name": "알림장 AI",
+  "description": "어린이집 보육교사를 위한 AI 알림장/주간일지 앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF9F6",
+  "theme_color": "#6C543E",
+  "orientation": "portrait",
+  "lang": "ko",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
