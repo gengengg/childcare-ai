@@ -29,6 +29,20 @@ export async function signInWithGoogle(): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Kakao OAuth 로그인. Supabase 프로젝트에 Kakao Provider 활성화 필요.
+ * Kakao Developers 에서 앱 등록 + REST API 키 발급이 선행되어야 함.
+ */
+export async function signInWithKakao(): Promise<void> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'kakao',
+    options: {
+      redirectTo: window.location.origin,
+    },
+  });
+  if (error) throw error;
+}
+
 export async function signInWithMagicLink(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
