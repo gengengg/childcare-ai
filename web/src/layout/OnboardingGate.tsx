@@ -13,6 +13,11 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
+      // 인증 관련 화면은 온보딩보다 우선. 여기서 리다이렉트하면 순환 발생.
+      if (loc.pathname === '/login' || loc.pathname === '/nickname') {
+        setChecked(true);
+        return;
+      }
       const seen = await hasSeenOnboarding();
       if (!seen && loc.pathname !== '/onboarding') {
         nav('/onboarding', { replace: true });
