@@ -4,3 +4,5 @@ python-dotenv
 openai
 python-docx
 lxml
+python-multipart
+pdfplumber

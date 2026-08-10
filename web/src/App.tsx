@@ -20,6 +20,7 @@ import { NicknameScreen } from './screens/NicknameScreen';
 import { FindIdScreen } from './screens/FindIdScreen';
 import { FindPasswordScreen } from './screens/FindPasswordScreen';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
+import { WeeklyDiaryScreen } from './screens/WeeklyDiaryScreen';
 
 export default function App() {
   return (
@@ -47,6 +48,10 @@ export default function App() {
                   <Route path="onboarding" element={<OnboardingScreen />} />
                   <Route path="manage-children" element={<ManageChildrenScreen />} />
                   <Route path="calendar" element={<CalendarScreen />} />
+                  <Route
+                    path="weekly-diary/:className/:year/:month/:week"
+                    element={<WeeklyDiaryScreen />}
+                  />
                   <Route path="settings" element={<SettingsScreen />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />

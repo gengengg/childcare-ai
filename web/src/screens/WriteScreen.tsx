@@ -22,7 +22,6 @@ import {
 } from '@/components/icons';
 import { getChildren, type Child } from '@/lib/children';
 import {
-  ACTIVITY_CATEGORIES,
   getDailyRecord,
   getTodayKey,
   makeEmptyActivity,
@@ -294,11 +293,11 @@ export function WriteScreen() {
    * - 하나라도 내용이 있으면 뒤에 이어붙임
    */
   const handleLoadClassActivities = async () => {
-    const cls = mode === 'personal' ? child?.className : commonClassName.trim();
-    if (!cls) {
-      toast.show('반 정보가 없어요. 아이를 먼저 선택해 주세요.', 'error');
-      return;
-    }
+    // 반이 하나뿐인(또는 반 이름을 안 쓰는) 사용자는 반 이름 없이도 동작해야 하므로
+    // 명시된 반 이름이 없으면 기본 반으로 폴백. getDefaultClassName은 빈 문자열도 반환 가능.
+    const explicit =
+      mode === 'personal' ? (child?.className ?? '') : commonClassName.trim();
+    const cls = explicit || getDefaultClassName(children);
     const classAct = await getClassActivity(cls, selectedDate);
     if (!classAct || classAct.activities.length === 0) {
       toast.show(`오늘 저장된 "${cls}" 공통 활동이 없어요.`, 'error');
@@ -620,21 +619,7 @@ export function WriteScreen() {
                 onChange={(e) => updateActivity(act.id, 'title', e.target.value)}
               />
 
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {ACTIVITY_CATEGORIES.map((cat) => (
-                  <Chip
-                    key={cat}
-                    active={act.category === cat}
-                    onClick={() =>
-                      updateActivity(act.id, 'category', act.category === cat ? '' : cat)
-                    }
-                  >
-                    {cat}
-                  </Chip>
-                ))}
-              </div>
-
-              {act.category || act.memo ? (
+              {act.memo ? (
                 <textarea
                   className="field-textarea min-h-[60px] mt-3"
                   placeholder="특이사항 메모 (선택)"
@@ -652,32 +637,22 @@ export function WriteScreen() {
             </div>
           ))}
 
-          {mode === 'personal' && child?.className ? (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={addActivity}
-                className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
-                  hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
-              >
-                <PlusIcon size={18} /> 활동 추가
-              </button>
-              <button
-                onClick={handleLoadClassActivities}
-                className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-700
-                  hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
-              >
-                <GridIcon size={18} /> 공통 활동 가져오기
-              </button>
-            </div>
-          ) : (
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={addActivity}
-              className="w-full rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
+              className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
                 hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
             >
-              <PlusIcon size={18} /> 활동 추가하기
+              <PlusIcon size={18} /> 활동 추가
             </button>
-          )}
+            <button
+              onClick={handleLoadClassActivities}
+              className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-700
+                hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
+            >
+              <GridIcon size={18} /> 공통 활동 가져오기
+            </button>
+          </div>
 
           <div>
             <input

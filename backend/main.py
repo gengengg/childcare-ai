@@ -6,12 +6,13 @@ from pathlib import Path
 from typing import List, Optional
 from urllib.parse import quote
 
+import pdfplumber
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from lxml import etree
@@ -727,6 +728,343 @@ def _run_structured_observation(request: ObservationRequest) -> dict:
     except Exception as e:
         print("OBSERVATION ERROR:", repr(e))
         return _fallback_observation_categories()
+
+
+# ──────────────── 월간계획안 파싱 ────────────────
+
+def _clean_cell(v) -> str:
+    return (v or "").strip().replace("\n", " ").replace("\r", " ")
+
+
+def _extract_pdf_text(content: bytes) -> str:
+    """
+    PDF의 표를 [행 | 셀1 | 셀2 | ...] 형태로 보존.
+    월간계획안은 '열 = 주' 구조라서 표 구조를 살려야 AI가 주 배정을 올바르게 함.
+    """
+    parts: List[str] = []
+    with pdfplumber.open(io.BytesIO(content)) as pdf:
+        for page_no, page in enumerate(pdf.pages, 1):
+            tables = page.extract_tables() or []
+            for tbl_i, tbl in enumerate(tables, 1):
+                parts.append(f"\n=== 표 {page_no}-{tbl_i} 시작 ===")
+                for row_i, row in enumerate(tbl, 1):
+                    cells = [_clean_cell(c) for c in row]
+                    parts.append(f"행{row_i}: | " + " | ".join(cells) + " |")
+                parts.append(f"=== 표 {page_no}-{tbl_i} 끝 ===\n")
+            # 표 밖의 서두 텍스트(주제, 교사 기대 등) 별도 섹션
+            txt = page.extract_text() or ""
+            if txt.strip():
+                parts.append(f"\n--- 페이지 {page_no} 본문 ---")
+                parts.append(txt)
+    return "\n".join(parts)
+
+
+def _extract_docx_text(content: bytes) -> str:
+    """
+    DOCX의 표를 행/열 구조로 보존. 문단은 별도 섹션.
+    """
+    doc = Document(io.BytesIO(content))
+    parts: List[str] = []
+    for para in doc.paragraphs:
+        if para.text.strip():
+            parts.append(para.text)
+    for tbl_i, table in enumerate(doc.tables, 1):
+        parts.append(f"\n=== 표 {tbl_i} 시작 ===")
+        for row_i, row in enumerate(table.rows, 1):
+            cells = [_clean_cell(c.text) for c in row.cells]
+            parts.append(f"행{row_i}: | " + " | ".join(cells) + " |")
+        parts.append(f"=== 표 {tbl_i} 끝 ===\n")
+    return "\n".join(parts)
+
+
+@app.post("/parse-monthly-plan")
+async def parse_monthly_plan(file: UploadFile = File(...)):
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
+
+    filename = (file.filename or "").lower()
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="빈 파일입니다.")
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="10MB 이하 파일만 업로드할 수 있어요.")
+
+    if filename.endswith(".pdf"):
+        try:
+            raw_text = _extract_pdf_text(content)
+        except Exception as e:
+            print("PDF PARSE ERROR:", repr(e))
+            raise HTTPException(status_code=400, detail="PDF에서 텍스트를 추출하지 못했어요.")
+    elif filename.endswith(".docx"):
+        try:
+            raw_text = _extract_docx_text(content)
+        except Exception as e:
+            print("DOCX PARSE ERROR:", repr(e))
+            raise HTTPException(status_code=400, detail="DOCX에서 텍스트를 추출하지 못했어요.")
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="PDF 또는 DOCX 파일만 지원해요. HWP는 한글에서 PDF로 변환 후 업로드해 주세요.",
+        )
+
+    if not raw_text.strip():
+        raise HTTPException(status_code=400, detail="파일에서 텍스트를 찾을 수 없어요.")
+
+    # 너무 길면 앞부분만 (월간계획안은 보통 2~3페이지)
+    if len(raw_text) > 20000:
+        raw_text = raw_text[:20000]
+
+    prompt = f"""
+아래는 어린이집 월간 놀이 계획안 문서의 텍스트야.
+문서는 "=== 표 X 시작 === ... === 표 X 끝 ===" 로 감싸진 표 섹션과, "--- 페이지 N 본문 ---" 으로 표시된 서두 텍스트로 구성되어 있어.
+
+【1단계: 표의 방향을 먼저 판단】
+어린이집마다 표 구조가 두 가지 형태가 있어. 표 안에서 "1주 / 2주 / 3주 / 4주" 라는 헤더가 **어디에 나오는지**로 판단해:
+
+▶ 형태 A (열 = 주): 헤더 행 하나에 [빈칸, 1주, 2주, 3주, 4주] 가 가로로 나열됨.
+   → **같은 열(같은 위치의 셀)에 있는 값은 모두 같은 주.**
+   → 각 데이터 행의 첫 번째 열은 카테고리 이름(놀이, 바깥놀이, 등원, 안전교육 등)이므로 무시.
+   → 두 번째 셀 = 1주 활동, 세 번째 셀 = 2주 활동, ... 이런 식으로 열 번호로 판단.
+
+▶ 형태 B (행 = 주): 각 행의 첫 번째 열에 "1주", "2주", "3주", "4주" 가 세로로 나열됨.
+   → **같은 행에 있는 모든 셀은 같은 주.**
+   → 그 행의 두 번째 셀부터의 모든 값이 해당 주의 활동.
+   → 헤더가 [주, 카테고리1, 카테고리2, ...] 형태라면 카테고리 이름은 무시.
+
+▶ 어느 쪽인지 모호하면 헤더 위치와 셀 개수 패턴으로 판별하고, 판별한 형태를 일관되게 적용.
+
+【2단계: 활동 추출 규칙】
+- 셀 안에 여러 활동이 "- 활동A - 활동B" 처럼 나열되어 있으면 각각을 분리해서 배열에 넣어.
+- 앞의 "- " 나 불릿 기호는 제거.
+- 카테고리 접두 태그 "(바깥놀이)", "(실내대체)", "(성폭력)", "(생활동요)" 등은 활동명에 유지.
+- 빈 셀("", "-", 공백만)이나 카테고리 이름 셀은 무시.
+- **순서 보존: 원본 문서에 나오는 순서 그대로 activities 배열에 넣어야 해.**
+  - 형태 A(열=주)일 때: 표의 위쪽 행부터 아래쪽 행 순서대로. 한 셀 안에 여러 활동이 있으면 그 셀 안의 순서 그대로.
+  - 형태 B(행=주)일 때: 그 행의 왼쪽 셀부터 오른쪽 셀 순서대로. 한 셀 안에 여러 활동이 있으면 셀 안의 순서 그대로.
+  - 절대 알파벳/가나다순으로 재정렬하거나, 카테고리별로 묶어서 순서를 바꾸지 마.
+
+【2-1단계: 활동이 아닌 카테고리는 완전 제외】
+아래 카테고리의 행/열에 있는 내용은 **매일 반복되는 일상 흐름**이라 활동으로 보지 말고 activities 배열에서 **완전히 제외**:
+- 등원 및 맞이하기 / 등원 / 하원 / 귀가 / 통합보육
+- 일상생활 / 일상 생활 (점심, 간식, 손씻기, 낮잠, 휴식, 배변, 기저귀갈이, 이닦기 등)
+- 식사 / 급식 / 오전간식 / 오후간식
+- 정리정돈 / 정리 / 청결
+- 가정 연계 / 가정연계 / 부모연계 (학부모 소통용 질문이라 활동 아님)
+
+포함해야 할 카테고리 (실제 활동):
+- 놀이 / 자유놀이 / 오전자유놀이 / 오후자유놀이
+- 바깥놀이 / 실외놀이 / 실내대체
+- 기본생활습관 (예: "줄을 서서 기다려요")
+- 안전교육 (예: "폭염 비상대응", "(성폭력)내가 좋아하는 것들")
+- 특별활동 / 오감놀이 / 체육 / 영어
+
+카테고리 판단은 표의 첫 번째 열(또는 첫 행) 카테고리 이름을 보고 결정. 카테고리 이름이 위 제외 목록에 매치되면 그 행/열의 셀은 모두 스킵.
+
+【3단계: 그 외 정보】
+- year, month: 서두에서 (예: "2026년 8월"). 못 찾으면 null.
+- theme: 그 달의 큰 놀이 주제 (예: "동물이랑 즐겁게 놀아요"). 서두 또는 표 상단에.
+- subtheme: 그 주의 소주제 (표에 "예상 놀이" 행/열 등). 없으면 빈 문자열.
+
+【절대 금지】
+- **주(week) 배정을 활동 내용의 의미로 추측하지 마.** 반드시 표의 위치(열 번호 또는 행 번호)로만 판단.
+- 3주 활동을 2주에 넣거나, 4주 활동을 3주에 넣는 등 위치 오배정.
+- 서두 텍스트의 나열만으로 활동을 뽑아 여러 주에 뿌리는 것. 반드시 표에서 뽑아.
+- 카테고리 이름("놀이", "바깥놀이" 등)을 activities 배열에 넣는 것.
+- 표 방향(A vs B)을 문서 안에서 왔다갔다 하는 것. 한 표에서는 한 방향만 적용.
+- **활동 순서를 임의로 바꾸는 것.** 원본 문서 순서 그대로 배열에 넣어.
+
+【출력】
+반드시 아래 형식의 순수 JSON으로만 응답 (마크다운 코드블록/설명 문장 금지):
+{{
+  "year": 2026,
+  "month": 8,
+  "theme": "동물이랑 즐겁게 놀아요",
+  "weeks": [
+    {{
+      "weekNumber": 1,
+      "subtheme": "다양한 동물이 궁금해요",
+      "activities": ["동물 모양 판에 공을 던져요", "동물 이름에 끼적여요", "(바깥놀이)자연물로 동물을 만들어요"]
+    }},
+    {{
+      "weekNumber": 2,
+      "subtheme": "동물 가족이 궁금해요",
+      "activities": ["엄마 캥거루가 되어요", "..."]
+    }}
+  ]
+}}
+
+문서 텍스트:
+{raw_text}
+"""
+
+    instructions = (
+        "너는 어린이집 월간 놀이 계획안을 구조화된 JSON으로 정리하는 파서야. "
+        "먼저 표의 주(week) 배치 방향(열=주 vs 행=주)을 판단하고, "
+        "그 다음 표의 셀 위치(열 번호 또는 행 번호)로만 주를 배정해. "
+        "활동 내용의 의미로 주를 추측하는 것은 절대 금지. "
+        "반드시 순수 JSON만 응답하고, 마크다운 코드블록이나 설명 문장은 절대 붙이지 마. "
+        "문서에 없는 정보는 임의로 만들지 말고 null 또는 빈 배열로 남겨."
+    )
+
+    try:
+        response = client_observation.responses.create(
+            model=model_name,
+            instructions=instructions,
+            input=prompt,
+            max_output_tokens=3000,
+        )
+        raw = _extract_json(response.output_text)
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as e:
+        print("MONTHLY PLAN JSON ERROR:", repr(e))
+        raise HTTPException(status_code=500, detail="AI 응답을 해석하지 못했어요.")
+    except Exception as e:
+        print("MONTHLY PLAN ERROR:", repr(e))
+        raise HTTPException(status_code=500, detail=f"월간계획안 파싱 실패: {repr(e)}")
+
+    # 정규화: 필수 키 보장
+    weeks = parsed.get("weeks") or []
+    normalized_weeks = []
+    for w in weeks:
+        if not isinstance(w, dict):
+            continue
+        acts = w.get("activities") or []
+        acts = [str(a).strip() for a in acts if str(a).strip()]
+        normalized_weeks.append({
+            "weekNumber": int(w.get("weekNumber") or (len(normalized_weeks) + 1)),
+            "subtheme": str(w.get("subtheme") or "").strip(),
+            "activities": acts,
+        })
+
+    return {
+        "year": parsed.get("year"),
+        "month": parsed.get("month"),
+        "theme": str(parsed.get("theme") or "").strip(),
+        "weeks": normalized_weeks,
+    }
+
+
+# ──────────────── 주간보육일지 총평 생성 ────────────────
+
+class WeeklyDayContext(BaseModel):
+    day: str  # "월", "화", ...
+    date: str  # YYYY-MM-DD
+    morning_free: str = ""
+    outdoor: str = ""
+    special: str = ""
+    common_records: List[str] = []      # 반 공통 알림장 본문들
+    masked_personal_records: List[str] = []  # 개인 알림장 (이름 마스킹된 본문들)
+
+
+class GenerateWeeklyEvaluationsRequest(BaseModel):
+    class_name: str = ""
+    year: int
+    month: int
+    week_number: int
+    theme: str = ""
+    subtheme: str = ""
+    style_guide: str = ""
+    days: List[WeeklyDayContext]
+
+
+@app.post("/generate-weekly-evaluations")
+def generate_weekly_evaluations(request: GenerateWeeklyEvaluationsRequest):
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
+
+    if not request.days:
+        raise HTTPException(status_code=400, detail="요일 정보가 비어 있습니다.")
+
+    # 요일별 컨텍스트 구성
+    day_blocks: List[str] = []
+    for d in request.days:
+        activities = []
+        if d.morning_free.strip():
+            activities.append(f"[오전 자유놀이] {d.morning_free.strip()}")
+        if d.outdoor.strip():
+            activities.append(f"[실외놀이] {d.outdoor.strip()}")
+        if d.special.strip():
+            activities.append(f"[특별활동] {d.special.strip()}")
+        activities_text = "\n".join(activities) if activities else "(등록된 활동 없음)"
+
+        record_blocks = []
+        for r in d.common_records:
+            if r.strip():
+                record_blocks.append(f"- (반 공통) {r.strip()}")
+        for r in d.masked_personal_records:
+            if r.strip():
+                record_blocks.append(f"- (개인, 이름 마스킹) {r.strip()}")
+        records_text = "\n".join(record_blocks) if record_blocks else "(해당 요일에 저장된 알림장 없음)"
+
+        day_blocks.append(
+            f"### {d.day}요일 ({d.date})\n"
+            f"활동:\n{activities_text}\n"
+            f"참고 알림장:\n{records_text}"
+        )
+
+    context_text = "\n\n".join(day_blocks)
+
+    prompt = f"""
+어린이집 주간보육일지의 요일별 총평 및 활동평가를 작성해줘.
+
+【상황】
+- 반: {request.class_name or '지정 안됨'}
+- {request.year}년 {request.month}월 {request.week_number}주
+- 놀이 주제: {request.theme or '(없음)'}
+- 예상 놀이: {request.subtheme or '(없음)'}
+
+【요일별 정보】
+{context_text}
+
+【작성 요령】
+- 각 요일마다 그 요일에 진행한 활동을 중심으로 3~6문장 정도의 관찰형 서술을 써.
+- 톤 예시: "OO 활동을 진행하자 영아는 ~ 모습을 보였다. 교사는 ~ 이야기하며 상호작용하였다.(놀이지원) 활동을 통해 ~ 경험할 수 있었다."
+- "참고 알림장"이 있으면 그 내용을 반영해서 실제 있었던 관찰을 자연스럽게 서술.
+- 참고 알림장이 없으면 활동 이름과 계획된 주제만 기반으로 자연스러운 관찰문을 상상해 서술 (구체 사실은 만들지 말고 활동의 성격에 맞는 일반적 관찰로).
+- 개인 알림장은 이름이 [영아] 로 마스킹돼 있으니 그대로 "영아", "영아들"로 서술.
+- 특정 아이를 지칭하지 말고 반 전체의 관찰로 써.
+- 활동이 아예 없는 요일이면 빈 문자열로 남겨.
+
+{f'【문체 가이드】{chr(10)}{request.style_guide.strip()}' if request.style_guide.strip() else ''}
+
+【출력】
+반드시 아래 형식의 순수 JSON으로만 응답 (마크다운 코드블록/설명 금지):
+{{
+  "월": "월요일 총평 서술...",
+  "화": "화요일 총평 서술...",
+  "수": "...",
+  "목": "...",
+  "금": "...",
+  "토": "..."
+}}
+
+응답에 요일 키는 위 요일별 정보에 등장한 요일만 포함해.
+"""
+
+    instructions = (
+        "너는 어린이집 주간보육일지 총평을 쓰는 어시스턴트야. "
+        "실제 관찰에 없는 구체 사실(특정 아이 이름/발화 원문/부상 사고 등)은 만들어내지 마. "
+        "반드시 순수 JSON만 응답하고, 마크다운 코드블록이나 설명 문장은 절대 붙이지 마."
+    )
+
+    try:
+        response = client_observation.responses.create(
+            model=model_name,
+            instructions=instructions,
+            input=prompt,
+            max_output_tokens=3500,
+        )
+        raw = _extract_json(response.output_text)
+        parsed = json.loads(raw)
+        if not isinstance(parsed, dict):
+            raise ValueError("응답이 객체가 아님")
+        return {k: str(v).strip() for k, v in parsed.items() if isinstance(k, str)}
+    except json.JSONDecodeError as e:
+        print("WEEKLY EVAL JSON ERROR:", repr(e))
+        raise HTTPException(status_code=500, detail="AI 응답을 해석하지 못했어요.")
+    except Exception as e:
+        print("WEEKLY EVAL ERROR:", repr(e))
+        raise HTTPException(status_code=500, detail=f"총평 생성 실패: {repr(e)}")
 
 
 if __name__ == "__main__":

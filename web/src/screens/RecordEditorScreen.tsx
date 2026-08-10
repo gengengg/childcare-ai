@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/Card';
-import { Chip } from '@/components/Chip';
 import { Header } from '@/components/Header';
 import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
@@ -17,7 +16,6 @@ import {
 } from '@/components/icons';
 import { getChildren, type Child } from '@/lib/children';
 import {
-  ACTIVITY_CATEGORIES,
   getDailyRecord,
   getTodayKey,
   makeEmptyActivity,
@@ -262,19 +260,6 @@ export function RecordEditorScreen() {
                 value={act.title}
                 onChange={(e) => update(act.id, 'title', e.target.value)}
               />
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {ACTIVITY_CATEGORIES.map((cat) => (
-                  <Chip
-                    key={cat}
-                    active={act.category === cat}
-                    onClick={() =>
-                      update(act.id, 'category', act.category === cat ? '' : cat)
-                    }
-                  >
-                    {cat}
-                  </Chip>
-                ))}
-              </div>
               <textarea
                 className="field-textarea min-h-[60px] mt-3"
                 placeholder="특이사항 메모 (선택)"

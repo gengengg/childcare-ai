@@ -4,11 +4,11 @@ import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { Header } from '@/components/Header';
 import { MonthCalendar } from '@/components/MonthCalendar';
+import { MonthlyPlanPicker } from '@/components/MonthlyPlanPicker';
 import { useToast } from '@/components/Toast';
 import { CalendarIcon, PlusIcon, SparkleIcon, TrashIcon } from '@/components/icons';
 import { getChildren, type Child } from '@/lib/children';
 import {
-  ACTIVITY_CATEGORIES,
   getTodayKey,
   makeEmptyActivity,
   type Activity,
@@ -33,6 +33,7 @@ export function ClassActivityScreen() {
   const [activities, setActivities] = useState<Activity[]>([makeEmptyActivity()]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [showClass, setShowClass] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -75,6 +76,21 @@ export function ClassActivityScreen() {
   const add = () => setActivities((prev) => [...prev, makeEmptyActivity()]);
   const remove = (id: string) =>
     setActivities((prev) => (prev.length > 1 ? prev.filter((a) => a.id !== id) : prev));
+
+  const addFromPlan = (titles: string[]) => {
+    if (titles.length === 0) return;
+    setActivities((prev) => {
+      // 첫 카드가 비어있으면 그 자리 채움, 아니면 뒤에 붙임
+      const firstEmpty =
+        prev.length === 1 && !prev[0].title.trim() && !prev[0].memo.trim();
+      const newCards: Activity[] = titles.map((title) => ({
+        ...makeEmptyActivity(),
+        title,
+      }));
+      return firstEmpty ? newCards : [...prev, ...newCards];
+    });
+    toast.show(`${titles.length}개 활동을 추가했어요.`, 'success');
+  };
 
   const handleSave = async () => {
     if (showClass && !selectedClass) {
@@ -173,6 +189,13 @@ export function ClassActivityScreen() {
           </div>
         )}
 
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="w-full mb-4 rounded-2xl border border-clay-300/60 bg-clay-500/5 py-3 text-[14px] font-semibold text-clay-700 hover:bg-clay-500/10 transition flex items-center justify-center gap-2"
+        >
+          <SparkleIcon size={16} /> 월간계획안에서 불러오기
+        </button>
+
         <div className="space-y-4">
           {activities.map((act, index) => (
             <div key={act.id} className="rounded-2xl border border-cream-200 p-4 bg-cream-50/60">
@@ -196,20 +219,6 @@ export function ClassActivityScreen() {
                 onChange={(e) => update(act.id, 'title', e.target.value)}
               />
 
-              <div className="mb-3 flex flex-wrap gap-1.5">
-                {ACTIVITY_CATEGORIES.map((cat) => (
-                  <Chip
-                    key={cat}
-                    active={act.category === cat}
-                    onClick={() =>
-                      update(act.id, 'category', act.category === cat ? '' : cat)
-                    }
-                  >
-                    {cat}
-                  </Chip>
-                ))}
-              </div>
-
               <textarea
                 className="field-textarea min-h-[70px]"
                 placeholder="활동 메모 (선택, 반 공통)"
@@ -232,6 +241,14 @@ export function ClassActivityScreen() {
       <button onClick={handleSave} className="btn-primary w-full py-4">
         반별 활동 저장하기
       </button>
+
+      <MonthlyPlanPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        className={selectedClass}
+        date={selectedDate}
+        onPick={addFromPlan}
+      />
     </>
   );
 }
