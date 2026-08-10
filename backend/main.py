@@ -970,25 +970,33 @@ class ExportWeeklyDiaryRequest(BaseModel):
 
 _WEEK_ORDER = ["월", "화", "수", "목", "금", "토"]
 
-# 매일 반복되는 표준 문구 (원본 예시 참고)
-_STANDARD_SLOTS = [
+# 슬롯 정의: (label, type, standard_text_or_None, extra_rows)
+# type: 'text' = 병합 표준 문구
+#       'morningFree' = 앱 데이터의 morningFree 를 병합 셀에 불릿 리스트로
+#       'outdoor'     = outdoor 병합 셀 + 별도 (O) 행 (요일별)
+#       'special'     = 요일별 활동명 셀 + 별도 (O) 행 (요일별)
+# extra_rows: 라벨 아래 추가로 필요한 데이터 행 수 (0 = 라벨과 동일 행에만 컨텐츠)
+_SLOT_DEFS = [
     ("등원 및 통합보육\n(07:30~09:00)",
-     "어린이집에 오면서 보았던 이야기를 나눠요"),
+     "text", "어린이집에 오면서 보았던 이야기를 나눠요", 0),
     ("손씻기 및 오전 간식\n(09:00~09:30)",
-     "<오전 간식 식단표 참고>\n- 손씻기 후 순차 제공"),
-    ("__MORNING_FREE__", None),
-    ("__OUTDOOR__", None),
-    ("점심식사 손씻고 이닦기\n기저귀갈이 및 배변\n(11:40~12:10)",
-     "<점심 식단표 참고>\n- 스스로 손씻기와 이닦기"),
-    ("__SPECIAL__", None),
+     "text", "<오전 간식 식단표 참고>\n- 손씻기 후 순차 제공", 0),
+    ("오 전\n자 유\n놀 이\n(09:30~\n10:30)",
+     "morningFree", None, 0),
+    ("실외놀이 및\n대체활동\n(10:30~11:40)",
+     "outdoor", None, 1),   # +1: (O) 마크 별도 행
+    ("점심식사 손씻고\n이닦기\n기저귀갈이 및 배변\n(11:40~12:10)",
+     "text", "<점심 식단표 참고>\n- 스스로 손씻기와 이닦기", 0),
+    ("특별활동\n(12:10~12:40)",
+     "special", None, 1),   # +1: (O) 마크 별도 행
     ("낮잠 및 휴식\n(12:40~14:30)",
-     "바르게 누워 편하게 쉬어요\n(화장실 다녀오기 / 세안 / 동화책 듣고 낮잠)"),
+     "text", "바르게 누워 편하게 쉬어요\n(화장실 다녀오기 / 세안 / 동화책 듣고 낮잠)", 0),
     ("손씻기 및 오후 간식\n(14:30~15:00)",
-     "<오후 식단표 참고>\n- 화장실 가기 및 손씻기"),
+     "text", "<오후 식단표 참고>\n- 화장실 가기 및 손씻기", 0),
     ("오후 자유놀이\n(15:00~17:00)",
-     "오전에 진행한 활동을 연계하여 자유 놀이를 진행한다."),
+     "text", "오전에 진행한 활동을 연계하여 자유 놀이를 진행한다.", 0),
     ("통합보육 및 귀가\n(17:00~19:30)",
-     "귀가 인사 및 부모님과의 연계"),
+     "text", "귀가 인사 및 부모님과의 연계", 0),
 ]
 
 
@@ -1038,11 +1046,9 @@ def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
             row.cells[i].width = day_w
         row.cells[n_cols - 1].width = sat_w
 
-    # ── 대형 통합 표: 제목 + 정보 3행 + 요일헤더 + 10슬롯 ──
-    activity_rows = len(_STANDARD_SLOTS)  # 10
-    # 등원(0), 손씻기(1), 오전자유놀이(2), 실외놀이(3), 점심(4), 특별활동(5),
-    # 낮잠(6), 오후간식(7), 오후자유놀이(8), 통합보육(9)
-    total_rows = 1 + 3 + 1 + activity_rows  # title + info×3 + dayHeader + 10
+    # ── 대형 통합 표: 제목 + 정보 3행 + 요일헤더 + 슬롯 (가변 행) ──
+    activity_rows = sum(1 + s[3] for s in _SLOT_DEFS)  # 각 슬롯 1행 + 추가행
+    total_rows = 1 + 3 + 1 + activity_rows  # title + info×3 + dayHeader + slots
     tbl = doc.add_table(rows=total_rows, cols=n_cols)
     tbl.style = "Table Grid"
     for r in tbl.rows:
@@ -1083,71 +1089,72 @@ def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
         _set_cell(day_row.cells[1 + i], header, bold=True, center=True, size=9)
     _set_row_min_height(day_row, Cm(0.9))
 
-    # ── 슬롯 행들 (10개) ──
-    # 각 슬롯의 첫 행 인덱스 저장 → 나중에 토 컬럼 세로 병합에 사용
-    slot_row_indices = []
-    for slot_i, (label, standard) in enumerate(_STANDARD_SLOTS):
-        r_idx = day_header_idx + 1 + slot_i
-        slot_row_indices.append(r_idx)
-        row = tbl.rows[r_idx]
+    # ── 슬롯 행들 (가변 행 수) ──
+    # 각 슬롯의 모든 행 인덱스 저장 → 나중에 토 컬럼 세로 병합에 사용
+    all_slot_row_indices = []  # 모든 슬롯의 행 인덱스 (평탄화)
+    cur_row = day_header_idx + 1
 
-        if label == "__MORNING_FREE__":
-            _set_cell(row.cells[0], "오 전\n자 유\n놀 이\n(09:30~\n10:30)",
-                      bold=True, center=True, size=9)
+    end_col = n_cols if sat_active else n_cols - 1  # 병합 종점(포함하지 않음)
+    day_count = n_days if sat_active else n_days - 1
+
+    def _merge_content(row, text: str, size: int = 9):
+        m = row.cells[1]
+        for i in range(2, end_col):
+            m = m.merge(row.cells[i])
+        _set_cell(m, text or "", size=size)
+
+    for label, slot_type, standard, extra in _SLOT_DEFS:
+        slot_rows_idx = list(range(cur_row, cur_row + 1 + extra))
+        all_slot_row_indices.extend(slot_rows_idx)
+
+        # 라벨 셀: 슬롯의 여러 행을 세로 병합
+        top_row = tbl.rows[slot_rows_idx[0]]
+        label_cell = top_row.cells[0]
+        for r_idx in slot_rows_idx[1:]:
+            label_cell = label_cell.merge(tbl.rows[r_idx].cells[0])
+        _set_cell(label_cell, label, bold=True, center=True, size=9)
+
+        if slot_type == "text":
+            _merge_content(top_row, standard or "")
+            _set_row_min_height(top_row, Cm(1.1))
+        elif slot_type == "morningFree":
             all_activities = _collect_unique(req.days, "morningFree")
-            # 월~금 병합 (토 활성이면 월~토 병합)
-            end_col = n_cols if sat_active else n_cols - 1
-            m = row.cells[1]
-            for i in range(2, end_col):
-                m = m.merge(row.cells[i])
-            _set_cell(m, _as_bullets(all_activities) or "-", size=9)
-            _set_row_min_height(row, Cm(4.5))
-        elif label == "__OUTDOOR__":
-            _set_cell(row.cells[0], "실외놀이 및\n대체활동\n(10:30~\n11:40)",
-                      bold=True, center=True, size=9)
+            _merge_content(top_row, _as_bullets(all_activities) or "-")
+            _set_row_min_height(top_row, Cm(4.5))
+        elif slot_type == "outdoor":
             all_outdoor = _collect_unique(req.days, "outdoor")
-            end_col = n_cols if sat_active else n_cols - 1
-            m = row.cells[1]
-            for i in range(2, end_col):
-                m = m.merge(row.cells[i])
-            marks_days = _WEEK_ORDER if sat_active else _WEEK_ORDER[:-1]
-            marks = " ".join(
-                f"{d}({'O' if _get_slot(req.days, d, 'outdoor').strip() else ' '})"
-                for d in marks_days
-            )
-            body = _as_bullets(all_outdoor) or "-"
-            if all_outdoor:
-                body += "\n\n실시: " + marks
-            _set_cell(m, body, size=9)
-            _set_row_min_height(row, Cm(2.5))
-        elif label == "__SPECIAL__":
-            _set_cell(row.cells[0], "특별활동\n(12:10~\n12:40)",
-                      bold=True, center=True, size=9)
-            # 요일별 개별 셀 (PDF와 동일)
-            day_count = n_days if sat_active else n_days - 1
+            _merge_content(top_row, _as_bullets(all_outdoor) or "-")
+            _set_row_min_height(top_row, Cm(2.2))
+            # 별도 (O) 마크 행
+            mark_row = tbl.rows[slot_rows_idx[1]]
+            for i in range(day_count):
+                day = _WEEK_ORDER[i]
+                mark = "(O)" if _get_slot(req.days, day, "outdoor").strip() else ""
+                _set_cell(mark_row.cells[1 + i], mark, center=True, size=9)
+            _set_row_min_height(mark_row, Cm(0.6))
+        elif slot_type == "special":
+            # 활동명 행 (요일별)
             for i in range(day_count):
                 day = _WEEK_ORDER[i]
                 content = _get_slot(req.days, day, "special").strip()
-                mark = "(O)" if content else ""
-                text = f"{content}\n{mark}" if content else ""
-                _set_cell(row.cells[1 + i], text, center=True, size=9)
-            _set_row_min_height(row, Cm(1.3))
-        else:
-            _set_cell(row.cells[0], label, bold=True, center=True, size=9)
-            end_col = n_cols if sat_active else n_cols - 1
-            m = row.cells[1]
-            for i in range(2, end_col):
-                m = m.merge(row.cells[i])
-            _set_cell(m, standard or "", size=9)
-            _set_row_min_height(row, Cm(1.1))
+                _set_cell(top_row.cells[1 + i], content, center=True, size=9)
+            _set_row_min_height(top_row, Cm(0.9))
+            # (O) 마크 행
+            mark_row = tbl.rows[slot_rows_idx[1]]
+            for i in range(day_count):
+                day = _WEEK_ORDER[i]
+                mark = "(O)" if _get_slot(req.days, day, "special").strip() else ""
+                _set_cell(mark_row.cells[1 + i], mark, center=True, size=9)
+            _set_row_min_height(mark_row, Cm(0.6))
+
+        cur_row += 1 + extra
 
     # ── 토요일 비활성일 때: 토 컬럼 전체를 세로 병합해 한 셀로 ──
     if not sat_active:
         sat_col_idx = n_cols - 1
-        first_sat_cell = tbl.rows[slot_row_indices[0]].cells[sat_col_idx]
-        for r_idx in slot_row_indices[1:]:
+        first_sat_cell = tbl.rows[all_slot_row_indices[0]].cells[sat_col_idx]
+        for r_idx in all_slot_row_indices[1:]:
             first_sat_cell = first_sat_cell.merge(tbl.rows[r_idx].cells[sat_col_idx])
-        # 세로 방향 텍스트처럼 각 글자마다 줄바꿈
         _set_cell(first_sat_cell, "등\n원\n하\n는\n\n영\n아\n가\n\n없\n음",
                   bold=True, center=True, size=10)
 
@@ -1194,10 +1201,8 @@ def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
 
     r0 = bottom.rows[0]
     _set_cell(r0.cells[0], "투 약 일 지", bold=True, center=True, size=10)
-    m = r0.cells[1]
-    for i in range(2, bottom_cols):
-        m = m.merge(r0.cells[i])
-    _set_cell(m, "", size=9)
+    for i in range(n_days):
+        _set_cell(r0.cells[1 + i], "", center=True, size=9)
     _set_row_min_height(r0, Cm(1.5))
 
     r1 = bottom.rows[1]
