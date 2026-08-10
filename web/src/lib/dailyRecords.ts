@@ -109,7 +109,7 @@ export async function getAllDailyRecords(): Promise<DailyRecord[]> {
 }
 
 export async function saveDailyRecord(
-  record: Omit<DailyRecord, 'id' | 'createdAt' | 'updatedAt'> & { photos?: string[] }
+  record: Omit<DailyRecord, 'id' | 'createdAt' | 'updatedAt' | 'photos'>
 ): Promise<DailyRecord> {
   const userId = await getSupabaseUserId();
   if (userId) {
@@ -209,7 +209,7 @@ async function getAllLocal(): Promise<DailyRecord[]> {
 }
 
 async function saveLocal(
-  record: Omit<DailyRecord, 'id' | 'createdAt' | 'updatedAt'> & { photos?: string[] }
+  record: Omit<DailyRecord, 'id' | 'createdAt' | 'updatedAt' | 'photos'>
 ): Promise<DailyRecord> {
   const records = await getAllLocal();
   const now = new Date().toISOString();
