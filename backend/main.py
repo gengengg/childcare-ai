@@ -944,6 +944,219 @@ async def parse_monthly_plan(file: UploadFile = File(...)):
     }
 
 
+# ──────────────── 주간보육일지 DOCX 내보내기 ────────────────
+
+class WeeklyDiaryDaySlots(BaseModel):
+    morningFree: str = ""
+    outdoor: str = ""
+    special: str = ""
+
+
+class ExportWeeklyDiaryRequest(BaseModel):
+    class_name: str = ""
+    year: int
+    month: int
+    week_number: int
+    age_group: str = ""
+    teacher_name: str = ""
+    director_name: str = ""
+    theme: str = ""
+    subtheme: str = ""
+    expectations: str = ""
+    days: dict  # { "월": {"morningFree": "...", ...}, ... }
+    evaluations: dict  # { "월": "...", ... }
+    dates: dict  # { "월": "2026-08-03", ... }
+
+
+_WEEK_ORDER = ["월", "화", "수", "목", "금", "토"]
+
+# 매일 반복되는 표준 문구 (원본 예시 참고)
+_STANDARD_SLOTS = [
+    ("등원 및 통합보육\n(07:30~09:00)",
+     "어린이집에 오면서 보았던 이야기를 나눠요"),
+    ("손씻기 및 오전 간식\n(09:00~09:30)",
+     "<오전 간식 식단표 참고>\n- 손씻기 후 순차 제공"),
+    ("__MORNING_FREE__", None),
+    ("__OUTDOOR__", None),
+    ("점심식사 손씻고 이닦기\n기저귀갈이 및 배변\n(11:40~12:10)",
+     "<점심 식단표 참고>\n- 스스로 손씻기와 이닦기"),
+    ("__SPECIAL__", None),
+    ("낮잠 및 휴식\n(12:40~14:30)",
+     "바르게 누워 편하게 쉬어요\n(화장실 다녀오기 / 세안 / 동화책 듣고 낮잠)"),
+    ("손씻기 및 오후 간식\n(14:30~15:00)",
+     "<오후 식단표 참고>\n- 화장실 가기 및 손씻기"),
+    ("오후 자유놀이\n(15:00~17:00)",
+     "오전에 진행한 활동을 연계하여 자유 놀이를 진행한다."),
+    ("통합보육 및 귀가\n(17:00~19:30)",
+     "귀가 인사 및 부모님과의 연계"),
+]
+
+
+def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
+    doc = Document()
+    section = doc.sections[0]
+    # 가로 방향(A4 landscape) — 요일 6개 컬럼 담기 위해
+    section.page_width = Cm(29.7)
+    section.page_height = Cm(21)
+    section.top_margin = Cm(1.2)
+    section.bottom_margin = Cm(1.2)
+    section.left_margin = Cm(1.2)
+    section.right_margin = Cm(1.2)
+
+    # 제목
+    title_para = doc.add_paragraph()
+    title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title_para.paragraph_format.space_after = Pt(6)
+    title_run = title_para.add_run(
+        f"<{req.year}년 {req.month}월 {req.week_number}주> "
+        f"{req.class_name or '반'} 보  육  일  지"
+    )
+    title_run.font.name = "맑은 고딕"
+    title_run.font.size = Pt(15)
+    title_run.font.bold = True
+    _force_east_asia_font(title_run, "맑은 고딕")
+
+    if req.age_group:
+        sub = doc.add_paragraph()
+        sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = sub.add_run(f"({req.age_group})")
+        r.font.name = "맑은 고딕"
+        r.font.size = Pt(11)
+        _force_east_asia_font(r, "맑은 고딕")
+
+    # ── 상단 정보 표 ────────────────────────────────────
+    info_table = doc.add_table(rows=4, cols=4)
+    info_table.style = "Table Grid"
+    _set_cell(info_table.rows[0].cells[0], "담임", bold=True, center=True, size=10)
+    _set_cell(info_table.rows[0].cells[1], req.teacher_name, center=True, size=10)
+    _set_cell(info_table.rows[0].cells[2], "원장", bold=True, center=True, size=10)
+    _set_cell(info_table.rows[0].cells[3], req.director_name, center=True, size=10)
+
+    _set_cell(info_table.rows[1].cells[0], "놀이 주제", bold=True, center=True, size=10)
+    m = info_table.rows[1].cells[1].merge(info_table.rows[1].cells[2]).merge(info_table.rows[1].cells[3])
+    _set_cell(m, req.theme, size=10)
+
+    _set_cell(info_table.rows[2].cells[0], "예상 놀이", bold=True, center=True, size=10)
+    m = info_table.rows[2].cells[1].merge(info_table.rows[2].cells[2]).merge(info_table.rows[2].cells[3])
+    _set_cell(m, req.subtheme, size=10)
+
+    _set_cell(info_table.rows[3].cells[0], "교사의 기대", bold=True, center=True, size=10)
+    m = info_table.rows[3].cells[1].merge(info_table.rows[3].cells[2]).merge(info_table.rows[3].cells[3])
+    _set_cell(m, req.expectations, size=10)
+
+    doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+    # ── 요일별 활동 표 (요일 x 시간대) ─────────────────
+    # 열: 시간대 라벨 + 6일
+    cols = 1 + len(_WEEK_ORDER)
+    rows = 1 + len(_STANDARD_SLOTS)  # 1 header + 10 slots
+    act_table = doc.add_table(rows=rows, cols=cols)
+    act_table.style = "Table Grid"
+
+    # 헤더 행
+    _set_cell(act_table.rows[0].cells[0], "요일\n활동", bold=True, center=True, size=9)
+    for i, day in enumerate(_WEEK_ORDER):
+        date = req.dates.get(day, "") if isinstance(req.dates, dict) else ""
+        header = f"{date[5:] if date else ''}({day})" if date else day
+        _set_cell(act_table.rows[0].cells[1 + i], header, bold=True, center=True, size=9)
+
+    # 데이터 행
+    for row_i, (label, standard) in enumerate(_STANDARD_SLOTS, start=1):
+        row = act_table.rows[row_i]
+        # 슬롯 라벨
+        if label == "__MORNING_FREE__":
+            _set_cell(row.cells[0], "오 전\n자 유\n놀 이\n(09:30\n~10:30)", bold=True, center=True, size=9)
+            for i, day in enumerate(_WEEK_ORDER):
+                content = _get_slot(req.days, day, "morningFree")
+                _set_cell(row.cells[1 + i], content, size=9)
+        elif label == "__OUTDOOR__":
+            _set_cell(row.cells[0], "실외놀이 및\n대체활동\n(10:30~11:40)", bold=True, center=True, size=9)
+            for i, day in enumerate(_WEEK_ORDER):
+                content = _get_slot(req.days, day, "outdoor")
+                _set_cell(row.cells[1 + i], content, size=9)
+        elif label == "__SPECIAL__":
+            _set_cell(row.cells[0], "특별활동\n(12:10~12:40)", bold=True, center=True, size=9)
+            for i, day in enumerate(_WEEK_ORDER):
+                content = _get_slot(req.days, day, "special")
+                _set_cell(row.cells[1 + i], content, size=9)
+        else:
+            _set_cell(row.cells[0], label, bold=True, center=True, size=9)
+            # 표준 슬롯: 첫 셀에 표준 문구, 나머지 셀은 병합
+            merged = row.cells[1]
+            for i in range(2, cols):
+                merged = merged.merge(row.cells[i])
+            _set_cell(merged, standard or "", center=True, size=9)
+
+    # 표 열 너비 균등
+    label_w = Cm(2.8)
+    day_w = Cm((27.5 - 2.8) / len(_WEEK_ORDER))
+    for r in act_table.rows:
+        r.cells[0].width = label_w
+        for i in range(1, cols):
+            r.cells[i].width = day_w
+    _set_row_min_height(act_table.rows[0], Cm(0.8))
+
+    doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+    # ── 총평 및 활동평가 표 ──────────────────────────
+    eval_para = doc.add_paragraph()
+    er = eval_para.add_run("총평 및 활동평가 · 특이사항")
+    er.font.name = "맑은 고딕"
+    er.font.bold = True
+    er.font.size = Pt(11)
+    _force_east_asia_font(er, "맑은 고딕")
+
+    eval_table = doc.add_table(rows=len(_WEEK_ORDER), cols=2)
+    eval_table.style = "Table Grid"
+    for i, day in enumerate(_WEEK_ORDER):
+        r = eval_table.rows[i]
+        r.cells[0].width = Cm(1.5)
+        r.cells[1].width = Cm(26)
+        _set_cell(r.cells[0], day, bold=True, center=True, size=10)
+        text = ""
+        if isinstance(req.evaluations, dict):
+            text = str(req.evaluations.get(day, "") or "").strip()
+        _set_cell(r.cells[1], text, size=10)
+        _set_row_min_height(r, Cm(2.2))
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+def _get_slot(days: dict, day: str, key: str) -> str:
+    if not isinstance(days, dict):
+        return ""
+    d = days.get(day)
+    if not isinstance(d, dict):
+        return ""
+    return str(d.get(key, "") or "")
+
+
+def _force_east_asia_font(run, font_name: str):
+    rPr = run._r.get_or_add_rPr()
+    rFonts = rPr.find(qn("w:rFonts"))
+    if rFonts is None:
+        rFonts = etree.SubElement(rPr, qn("w:rFonts"))
+    rFonts.set(qn("w:eastAsia"), font_name)
+
+
+@app.post("/export-weekly-diary-docx")
+def export_weekly_diary_docx(req: ExportWeeklyDiaryRequest):
+    try:
+        docx_bytes = build_weekly_diary_docx(req)
+        filename = f"주간보육일지_{req.year}년{req.month}월{req.week_number}주_{req.class_name or '반'}.docx"
+        encoded_filename = quote(filename, safe="")
+        return StreamingResponse(
+            io.BytesIO(docx_bytes),
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"},
+        )
+    except Exception as error:
+        print("WEEKLY DIARY DOCX ERROR:", repr(error))
+        raise HTTPException(status_code=500, detail=f"docx 생성 중 오류: {repr(error)}")
+
+
 # ──────────────── 주간보육일지 총평 생성 ────────────────
 
 class WeeklyDayContext(BaseModel):

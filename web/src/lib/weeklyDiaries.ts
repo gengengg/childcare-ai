@@ -281,6 +281,61 @@ export async function collectRecordsForWeek(
   return result;
 }
 
+export async function exportWeeklyDiaryDocx(input: {
+  className: string;
+  year: number;
+  month: number;
+  weekNumber: number;
+  ageGroup: string;
+  teacherName: string;
+  directorName: string;
+  theme: string;
+  subtheme: string;
+  expectations: string;
+  days: Record<string, DaySlots>;
+  evaluations: Record<string, string>;
+  dates: Record<WeekDay, string>;
+}): Promise<void> {
+  const payload = {
+    class_name: input.className,
+    year: input.year,
+    month: input.month,
+    week_number: input.weekNumber,
+    age_group: input.ageGroup,
+    teacher_name: input.teacherName,
+    director_name: input.directorName,
+    theme: input.theme,
+    subtheme: input.subtheme,
+    expectations: input.expectations,
+    days: input.days,
+    evaluations: input.evaluations,
+    dates: input.dates,
+  };
+  const res = await fetch(`${API_BASE_URL}/export-weekly-diary-docx`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    let msg = 'DOCX 생성 실패';
+    try {
+      const j = await res.json();
+      if (j?.detail) msg = String(j.detail);
+    } catch {}
+    throw new Error(msg);
+  }
+  const blob = await res.blob();
+  const filename = `주간보육일지_${input.year}년${input.month}월${input.weekNumber}주_${input.className || '반'}.docx`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export async function generateWeeklyEvaluations(input: {
   className: string;
   year: number;

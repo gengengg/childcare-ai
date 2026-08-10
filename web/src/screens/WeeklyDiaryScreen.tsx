@@ -11,6 +11,7 @@ import {
   collectRecordsForWeek,
   datesForWeek,
   emptyDaySlots,
+  exportWeeklyDiaryDocx,
   generateWeeklyEvaluations,
   getWeeklyDiary,
   saveWeeklyDiary,
@@ -76,6 +77,7 @@ export function WeeklyDiaryScreen() {
   const [saving, setSaving] = useState(false);
   const [distributing, setDistributing] = useState(false);
   const [generatingEval, setGeneratingEval] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // 반 없으면 기본 반으로 폴백 (단일 반 사용자 대응)
   useEffect(() => {
@@ -191,6 +193,32 @@ export function WeeklyDiaryScreen() {
       toast.show(e instanceof Error ? e.message : '총평 생성 실패', 'error');
     } finally {
       setGeneratingEval(false);
+    }
+  };
+
+  const handleExportDocx = async () => {
+    setExporting(true);
+    try {
+      await exportWeeklyDiaryDocx({
+        className,
+        year,
+        month,
+        weekNumber,
+        ageGroup,
+        teacherName,
+        directorName,
+        theme,
+        subtheme,
+        expectations,
+        days,
+        evaluations,
+        dates,
+      });
+      toast.show('DOCX 파일이 다운로드됐어요.', 'success');
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : 'DOCX 생성 실패', 'error');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -367,13 +395,22 @@ export function WeeklyDiaryScreen() {
         </Card>
       </details>
 
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="btn-primary w-full py-4 mb-6"
-      >
-        {saving ? '저장 중…' : '주간일지 저장'}
-      </button>
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-primary flex-1 py-4"
+        >
+          {saving ? '저장 중…' : '주간일지 저장'}
+        </button>
+        <button
+          onClick={handleExportDocx}
+          disabled={exporting}
+          className="flex-1 py-4 rounded-2xl border border-clay-500/40 bg-surface text-clay-700 text-[14px] font-semibold hover:bg-clay-500/5 disabled:opacity-50"
+        >
+          {exporting ? '생성 중…' : 'DOCX 다운로드'}
+        </button>
+      </div>
     </>
   );
 }
