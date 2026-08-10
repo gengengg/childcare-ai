@@ -287,6 +287,34 @@ export function WriteScreen() {
   const removePhoto = (i: number) =>
     setPhotos((prev) => prev.filter((_, idx) => idx !== i));
 
+  /**
+   * 개인 알림장 편집 중 반 공통 활동을 명시적으로 불러온다.
+   * - 현재 활동이 모두 비어있으면 대체
+   * - 하나라도 내용이 있으면 뒤에 이어붙임
+   */
+  const handleLoadClassActivities = async () => {
+    const cls = mode === 'personal' ? child?.className : commonClassName.trim();
+    if (!cls) {
+      toast.show('반 정보가 없어요. 아이를 먼저 선택해 주세요.', 'error');
+      return;
+    }
+    const classAct = await getClassActivity(cls, selectedDate);
+    if (!classAct || classAct.activities.length === 0) {
+      toast.show(`오늘 저장된 "${cls}" 공통 활동이 없어요.`, 'error');
+      return;
+    }
+    const hasContent = activities.some((a) => a.title.trim() || a.memo.trim());
+    const fetched = cloneActivitiesWithNewIds(classAct.activities);
+    if (hasContent) {
+      setActivities((prev) => [...prev, ...fetched]);
+      toast.show(`공통 활동 ${fetched.length}개를 이어붙였어요.`, 'success');
+    } else {
+      setActivities(fetched);
+      setLoadedFromClass(true);
+      toast.show(`공통 활동 ${fetched.length}개를 불러왔어요.`, 'success');
+    }
+  };
+
   const targetName =
     mode === 'personal'
       ? child?.name ?? manualName.trim()
@@ -624,13 +652,32 @@ export function WriteScreen() {
             </div>
           ))}
 
-          <button
-            onClick={addActivity}
-            className="w-full rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
-              hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
-          >
-            <PlusIcon size={18} /> 활동 추가하기
-          </button>
+          {mode === 'personal' && child?.className ? (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={addActivity}
+                className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
+                  hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
+              >
+                <PlusIcon size={18} /> 활동 추가
+              </button>
+              <button
+                onClick={handleLoadClassActivities}
+                className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-700
+                  hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
+              >
+                <GridIcon size={18} /> 공통 활동 가져오기
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={addActivity}
+              className="w-full rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
+                hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
+            >
+              <PlusIcon size={18} /> 활동 추가하기
+            </button>
+          )}
 
           <div>
             <input

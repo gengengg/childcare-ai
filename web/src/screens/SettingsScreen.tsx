@@ -5,10 +5,13 @@ import { Card } from '@/components/Card';
 import { Header } from '@/components/Header';
 import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
-import { SettingsIcon, SparkleIcon, TrashIcon } from '@/components/icons';
+import { SettingsIcon, SparkleIcon, TrashIcon, UserIcon } from '@/components/icons';
 import { getChildren, type Child } from '@/lib/children';
 import { resetOnboarding } from '@/lib/onboarding';
 import { resetTour } from '@/lib/tour';
+import { useAuth } from '@/contexts/AuthContext';
+import { exitGuestMode, signOut, updatePassword } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import {
   computeShowClass,
   getShowClassSetting,
@@ -125,6 +128,9 @@ function GeneralTab() {
 
   return (
     <>
+      <AccountCard />
+      <PasswordCard />
+
       <Card className="mb-4" hint="테마">
         <p className="text-[12px] text-subtle mb-3">
           자동은 기기의 다크모드 설정을 따라가요.
@@ -248,7 +254,154 @@ function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
   );
 }
 
+function AccountCard() {
+  const { mode, user, refreshGuest } = useAuth();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [nickname, setNickname] = useState<string>('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (mode !== 'authed' || !user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('nickname')
+        .eq('id', user.id)
+        .maybeSingle();
+      setNickname(data?.nickname ?? '');
+    })();
+  }, [mode, user]);
+
+  const handleLogout = async () => {
+    if (!window.confirm('로그아웃하시겠어요? 기기에 남은 게스트 데이터는 보존돼요.')) return;
+    setBusy(true);
+    try {
+      await signOut();
+      await refreshGuest();
+      toast.show('로그아웃했어요.');
+      // AuthGate가 /login으로 자동 이동
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleGuestToLogin = async () => {
+    setBusy(true);
+    try {
+      await exitGuestMode();
+      await refreshGuest();
+      navigate('/login');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (mode === 'authed') {
+    return (
+      <Card className="mb-4" hint="계정">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-full bg-clay-500 text-white flex items-center justify-center">
+            <UserIcon size={20} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-bold text-ink truncate">
+              {nickname || '선생님'}
+            </p>
+            <p className="text-[12px] text-subtle truncate">{user?.email ?? '로그인됨'}</p>
+          </div>
+        </div>
+        <p className="text-[12px] text-subtle mb-3">
+          알림장, 아이 목록, 문체가 클라우드에 저장돼요. 다른 기기에서도 로그인만 하면 이어서 쓸 수 있어요.
+        </p>
+        <button
+          onClick={handleLogout}
+          disabled={busy}
+          className="btn-ghost w-full"
+        >
+          {busy ? '처리 중…' : '로그아웃'}
+        </button>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="mb-4" hint="계정">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-full bg-cream-200 text-clay-700 flex items-center justify-center">
+          <UserIcon size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-bold text-ink">게스트 모드</p>
+          <p className="text-[12px] text-subtle">이 기기에만 저장 중</p>
+        </div>
+      </div>
+      <p className="text-[12px] text-subtle mb-3">
+        로그인하면 다른 기기에서도 이어서 쓸 수 있어요. 지금까지의 게스트 데이터는 이 기기에 그대로 남습니다.
+      </p>
+      <button
+        onClick={handleGuestToLogin}
+        disabled={busy}
+        className="btn-primary w-full"
+      >
+        {busy ? '이동 중…' : '로그인하기'}
+      </button>
+    </Card>
+  );
+}
+
+function PasswordCard() {
+  const { mode } = useAuth();
+  const toast = useToast();
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  if (mode !== 'authed') return null;
+
+  const handleSave = async () => {
+    if (password.length < 6) {
+      toast.show('비밀번호는 6자 이상으로 입력해 주세요');
+      return;
+    }
+    setBusy(true);
+    try {
+      await updatePassword(password);
+      setPassword('');
+      toast.show('비밀번호를 저장했어요. 다음부터 이메일 + 비밀번호로 로그인할 수 있어요.', 'success');
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : '저장 실패');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="mb-4" hint="비밀번호">
+      <p className="text-[12px] text-subtle mb-3">
+        비밀번호를 저장하면 이메일 + 비밀번호로 바로 로그인할 수 있어요.
+      </p>
+      <input
+        type="password"
+        autoComplete="new-password"
+        className="field-input mb-3"
+        placeholder="새 비밀번호 (6자 이상)"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        disabled={busy}
+      />
+      <button
+        onClick={handleSave}
+        disabled={busy || password.length < 6}
+        className="btn-primary w-full"
+      >
+        {busy ? '저장 중…' : '비밀번호 저장'}
+      </button>
+    </Card>
+  );
+}
+
 function DataTab() {
+  const { mode } = useAuth();
   const toast = useToast();
 
   const handleClearAll = async () => {
@@ -282,15 +435,24 @@ function DataTab() {
   return (
     <>
       <Card className="mb-4" hint="저장 위치">
-        <p className="text-[13px] text-ink leading-relaxed">
-          이 앱의 데이터는 <strong>이 브라우저 안에만</strong> 저장돼요.
-          다른 기기나 다른 브라우저로 옮기려면 별도의 백업이 필요합니다.
-        </p>
+        {mode === 'authed' ? (
+          <p className="text-[13px] text-ink leading-relaxed">
+            로그인 상태예요. 데이터는 <strong>클라우드(Supabase)</strong>에 저장돼요.
+            다른 기기에서도 로그인하면 그대로 이어서 쓸 수 있어요.
+          </p>
+        ) : (
+          <p className="text-[13px] text-ink leading-relaxed">
+            게스트 모드예요. 데이터는 <strong>이 브라우저 안에만</strong> 저장돼요.
+            다른 기기나 다른 브라우저로 옮기려면 별도의 백업이 필요합니다.
+          </p>
+        )}
       </Card>
 
       <Card className="mb-4" hint="위험 영역">
         <p className="text-[12px] text-subtle mb-3">
-          아이·알림장·공통 활동·문체 설정 등 모든 저장 데이터를 지워요.
+          {mode === 'authed'
+            ? '이 기기에 남아 있는 게스트용 로컬 데이터만 삭제해요. 클라우드에 저장된 계정 데이터는 그대로 남습니다.'
+            : '아이·알림장·공통 활동·문체 설정 등 모든 저장 데이터를 지워요.'}
         </p>
         <button
           onClick={handleClearAll}
