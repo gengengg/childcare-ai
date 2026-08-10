@@ -9,11 +9,11 @@ import {
 } from '@/components/icons';
 
 const tabs = [
-  { to: '/', label: '홈', Icon: HomeIcon, end: true },
-  { to: '/records', label: '보관함', Icon: FolderIcon },
-  { to: '/weekly', label: '주간일지', Icon: NoteIcon },
-  { to: '/children', label: '아이', Icon: UsersIcon },
-  { to: '/settings', label: '설정', Icon: SettingsIcon },
+  { to: '/', label: '홈', Icon: HomeIcon, end: true, tourKey: 'tab-home' },
+  { to: '/records', label: '보관함', Icon: FolderIcon, tourKey: 'tab-records' },
+  { to: '/weekly', label: '학급', Icon: NoteIcon, tourKey: 'tab-weekly' },
+  { to: '/children', label: '아이', Icon: UsersIcon, tourKey: 'tab-children' },
+  { to: '/settings', label: '설정', Icon: SettingsIcon, tourKey: 'tab-settings' },
 ];
 
 export function BottomTabBar() {
@@ -28,6 +28,7 @@ export function BottomTabBar() {
             key={t.to}
             to={t.to}
             end={t.end}
+            data-tour={t.tourKey}
             className="flex flex-col items-center justify-center gap-0.5 relative"
           >
             {({ isActive }) => (

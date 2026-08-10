@@ -151,8 +151,8 @@ export function WeeklyHubScreen() {
     <>
       <Header
         icon={<NoteIcon />}
-        title="주간일지"
-        subtitle="월간계획안 · 주간보육일지를 관리해요"
+        title="학급 운영"
+        subtitle="월간계획안과 주간보육일지"
       />
 
       {/* 월 네비게이션 */}

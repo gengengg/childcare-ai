@@ -102,29 +102,35 @@ const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="write-card"]',
     title: '여기서 알림장을 써요',
-    description: '활동을 적고 사진을 넣으면 AI가 초안을 만들어 드려요.',
+    description:
+      '활동을 적고 (선택) 사진을 넣으면 AI가 초안을 만들어 드려요. 사진은 저장되지 않고 초안 생성에만 쓰여요.',
   },
   {
     selector: '[data-tour="mode-toggle"]',
-    title: '여러 아이에게 한꺼번에 보낼 땐',
+    title: '개인 vs 공통 알림장',
     description:
-      "'공통 알림장'을 골라 반 전체용 알림장을 한 번에 작성해요.",
+      "여러 아이에게 같은 내용을 보낼 땐 '공통 알림장'으로. 개인화가 필요하면 '개인 알림장'으로 각각 써요.",
   },
   {
-    selector: '[data-tour="class-activity"]',
-    title: '반 활동은 미리 저장',
+    selector: '[data-tour="tab-records"]',
+    title: '지난 알림장은 보관함에',
+    description: '작성한 모든 알림장이 여기에 저장돼요. 언제든 다시 열어보고 편집 가능.',
+  },
+  {
+    selector: '[data-tour="tab-weekly"]',
+    title: '🆕 학급 탭: 월간계획 + 주간일지',
     description:
-      '여기서 반 활동을 저장해두면 개인 알림장에 자동으로 담겨요.',
+      '월간계획안(PDF/DOCX)을 올리면 AI가 4주로 정리하고, 그 활동을 바탕으로 주간보육일지 초안까지 자동 생성해요.',
   },
   {
-    selector: '[data-tour="observation"]',
-    title: '관찰일지도 여기서',
-    description: '저장된 알림장으로 관찰일지를 AI가 정리해줘요.',
+    selector: '[data-tour="tab-children"]',
+    title: '반 아이 관리',
+    description: '아이 이름·나이·반을 여기서 등록해요. 등록된 아이 이름으로 개인 알림장을 씁니다.',
   },
   {
-    selector: '[data-tour="settings"]',
-    title: '세부 설정은 여기',
-    description: '다크 모드, 문체, 이모지 등을 설정에서 관리해요.',
+    selector: '[data-tour="tab-settings"]',
+    title: '설정',
+    description: '문체 학습, 다크 모드, 계정, 튜토리얼 다시 보기 등은 설정 탭에서.',
   },
 ];
 
