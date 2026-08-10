@@ -19,9 +19,7 @@ export function OnboardingScreen() {
   return (
     <div className="min-h-full flex flex-col justify-between py-8">
       <div className="pt-6">
-        <div className="w-20 h-20 rounded-3xl bg-clay-50 border-2 border-clay-200 flex items-center justify-center shadow-pop mb-5">
-          <Mascot variant="wave" size={56} />
-        </div>
+        <Mascot variant="wave" size={96} className="mb-5" />
         <p className="text-[13px] font-bold text-clay-500 tracking-wide mb-2">
           안녕하세요! 저는 햄찌예요
         </p>

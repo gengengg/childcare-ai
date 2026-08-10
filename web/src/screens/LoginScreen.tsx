@@ -140,9 +140,7 @@ export function LoginScreen() {
   return (
     <div className="min-h-full flex flex-col justify-between py-8 px-6">
       <div className="pt-8">
-        <div className="w-16 h-16 rounded-3xl bg-clay-50 border-2 border-clay-200 flex items-center justify-center shadow-pop mb-5">
-          <Mascot variant="wave" size={44} />
-        </div>
+        <Mascot variant="wave" size={80} className="mb-5" />
         <p className="text-[13px] font-bold text-clay-500 tracking-wide mb-2">알림장 AI</p>
         <h1 className="text-[26px] font-extrabold text-ink leading-tight mb-3">
           로그인하고
