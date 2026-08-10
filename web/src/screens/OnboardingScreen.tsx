@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/Toast';
 import { markOnboardingSeen } from '@/lib/onboarding';
 import { resetTour } from '@/lib/tour';
-import { PencilIcon, SparkleIcon } from '@/components/icons';
+import { SparkleIcon } from '@/components/icons';
+import { Mascot } from '@/components/Mascot';
 
 export function OnboardingScreen() {
   const navigate = useNavigate();
@@ -18,11 +19,11 @@ export function OnboardingScreen() {
   return (
     <div className="min-h-full flex flex-col justify-between py-8">
       <div className="pt-6">
-        <div className="w-16 h-16 rounded-3xl bg-clay-500 text-white flex items-center justify-center shadow-pop mb-5">
-          <PencilIcon size={30} />
+        <div className="w-20 h-20 rounded-3xl bg-clay-50 border-2 border-clay-200 flex items-center justify-center shadow-pop mb-5">
+          <Mascot variant="wave" size={56} />
         </div>
         <p className="text-[13px] font-bold text-clay-500 tracking-wide mb-2">
-          처음 오셨네요
+          안녕하세요! 저는 햄찌예요
         </p>
         <h1 className="text-[28px] font-extrabold text-ink leading-tight mb-4">
           알림장 AI에
@@ -30,12 +31,12 @@ export function OnboardingScreen() {
           오신 걸 환영해요
         </h1>
         <p className="text-[15px] text-subtle leading-relaxed">
-          사진과 활동만 넣으면 AI가 따뜻한 알림장을 만들어 드려요.
+          사진과 활동만 넣으면 제가 AI로 따뜻한 알림장을 만들어 드려요.
           <br />
           <br />
-          다음 화면에서 나만의 문체를 등록하면 그 톤으로 작성돼요.
+          다음 화면에서 선생님만의 문체를 등록하시면 그 톤 그대로 써드릴게요.
           <br />
-          건너뛰어도 괜찮아요.
+          건너뛰어도 괜찮아요!
         </p>
       </div>
 

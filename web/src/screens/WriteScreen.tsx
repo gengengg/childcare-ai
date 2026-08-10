@@ -101,36 +101,42 @@ function Shortcut({
 const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="write-card"]',
-    title: '여기서 알림장을 써요',
+    title: '반가워요! 저는 햄찌예요',
+    mascot: 'wave',
     description:
-      '활동을 적고 (선택) 사진을 넣으면 AI가 초안을 만들어 드려요. 사진은 저장되지 않고 초안 생성에만 쓰여요.',
+      '알림장 쓰기의 시작점이에요. 오늘 뭐 했는지 살짝만 적어주시면 제가 AI로 초안을 뚝딱 만들어 드려요! 사진을 넣으면 더 자연스러운 알림장이 나와요 (사진은 저장되지 않아요).',
   },
   {
     selector: '[data-tour="mode-toggle"]',
-    title: '개인 vs 공통 알림장',
+    title: '개인 알림장? 공통 알림장?',
+    mascot: 'thinking',
     description:
-      "여러 아이에게 같은 내용을 보낼 땐 '공통 알림장'으로. 개인화가 필요하면 '개인 알림장'으로 각각 써요.",
+      "반 전체에 같은 내용을 보낼 땐 '공통', 아이마다 다르게 쓸 땐 '개인'을 골라주세요. 공통으로 쓴 활동은 개인 알림장에도 자동으로 이어져요.",
   },
   {
     selector: '[data-tour="tab-records"]',
-    title: '지난 알림장은 보관함에',
-    description: '작성한 모든 알림장이 여기에 저장돼요. 언제든 다시 열어보고 편집 가능.',
+    title: '보관함 · 지난 알림장 다시 보기',
+    mascot: 'point',
+    description: '작성한 알림장은 전부 여기 쌓여요. 날짜별로 언제든 다시 열어보고 수정할 수 있답니다.',
   },
   {
     selector: '[data-tour="tab-weekly"]',
-    title: '🆕 학급 탭: 월간계획 + 주간일지',
+    title: '학급 · 월간계획과 주간일지',
+    mascot: 'happy',
     description:
-      '월간계획안(PDF/DOCX)을 올리면 AI가 4주로 정리하고, 그 활동을 바탕으로 주간보육일지 초안까지 자동 생성해요.',
+      '어린이집에서 받은 월간계획안(PDF/DOCX)을 올려주세요. 제가 4주 활동을 정리해두면, 그걸로 주간보육일지 초안까지 자동으로 만들어 드려요. 인쇄용 DOCX 다운로드도 가능!',
   },
   {
     selector: '[data-tour="tab-children"]',
-    title: '반 아이 관리',
-    description: '아이 이름·나이·반을 여기서 등록해요. 등록된 아이 이름으로 개인 알림장을 씁니다.',
+    title: '아이 · 반 명단 관리',
+    mascot: 'point',
+    description: '아이 이름·나이·반을 여기서 등록해요. 등록된 아이 기준으로 개인 알림장이 만들어져요.',
   },
   {
     selector: '[data-tour="tab-settings"]',
-    title: '설정',
-    description: '문체 학습, 다크 모드, 계정, 튜토리얼 다시 보기 등은 설정 탭에서.',
+    title: '설정 · 문체 · 다크모드 · 계정',
+    mascot: 'happy',
+    description: '나만의 문체를 학습시키거나, 다크 모드를 켜거나, 이 튜토리얼을 다시 보고 싶을 때도 여기로 오세요. 잘 부탁드려요!',
   },
 ];
 

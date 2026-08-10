@@ -12,7 +12,8 @@ import {
 } from '@/lib/auth';
 import { setRememberMe } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { PencilIcon, SparkleIcon } from '@/components/icons';
+import { SparkleIcon } from '@/components/icons';
+import { Mascot } from '@/components/Mascot';
 import { VerifyCodePanel } from '@/components/VerifyCodePanel';
 
 type Mode = 'signin' | 'signup';
@@ -139,8 +140,8 @@ export function LoginScreen() {
   return (
     <div className="min-h-full flex flex-col justify-between py-8 px-6">
       <div className="pt-8">
-        <div className="w-16 h-16 rounded-3xl bg-clay-500 text-white flex items-center justify-center shadow-pop mb-5">
-          <PencilIcon size={30} />
+        <div className="w-16 h-16 rounded-3xl bg-clay-50 border-2 border-clay-200 flex items-center justify-center shadow-pop mb-5">
+          <Mascot variant="wave" size={44} />
         </div>
         <p className="text-[13px] font-bold text-clay-500 tracking-wide mb-2">알림장 AI</p>
         <h1 className="text-[26px] font-extrabold text-ink leading-tight mb-3">
