@@ -132,7 +132,7 @@
   }
 
   .card-hint {
-    @apply text-[13px] font-semibold text-clay-700 mb-3 tracking-tight;
+    @apply text-[16px] font-extrabold text-clay-700 mb-3 tracking-tight;
   }
 
   /* 다크에서는 clay-700이 밝은 크림색이라 hint 컬러가 잘 안 보임. 톤 다운 */

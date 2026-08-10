@@ -259,6 +259,9 @@ function AccountCard() {
   const navigate = useNavigate();
   const toast = useToast();
   const [nickname, setNickname] = useState<string>('');
+  const [nicknameDraft, setNicknameDraft] = useState<string>('');
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [savingNickname, setSavingNickname] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -269,9 +272,39 @@ function AccountCard() {
         .select('nickname')
         .eq('id', user.id)
         .maybeSingle();
-      setNickname(data?.nickname ?? '');
+      const n = data?.nickname ?? '';
+      setNickname(n);
+      setNicknameDraft(n);
     })();
   }, [mode, user]);
+
+  const handleSaveNickname = async () => {
+    if (!user) return;
+    const trimmed = nicknameDraft.trim();
+    if (!trimmed) {
+      toast.show('닉네임을 입력해 주세요.', 'error');
+      return;
+    }
+    if (trimmed === nickname) {
+      setEditingNickname(false);
+      return;
+    }
+    setSavingNickname(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ nickname: trimmed })
+        .eq('id', user.id);
+      if (error) throw error;
+      setNickname(trimmed);
+      setEditingNickname(false);
+      toast.show('닉네임을 저장했어요.', 'success');
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : '저장 실패', 'error');
+    } finally {
+      setSavingNickname(false);
+    }
+  };
 
   const handleLogout = async () => {
     if (!window.confirm('로그아웃하시겠어요? 기기에 남은 게스트 데이터는 보존돼요.')) return;
@@ -300,15 +333,61 @@ function AccountCard() {
   if (mode === 'authed') {
     return (
       <Card className="mb-4" hint="계정">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-clay-500 text-white flex items-center justify-center">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-clay-500 text-white flex items-center justify-center flex-shrink-0">
             <UserIcon size={20} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-bold text-ink truncate">
-              {nickname || '선생님'}
-            </p>
-            <p className="text-[12px] text-subtle truncate">{user?.email ?? '로그인됨'}</p>
+            {editingNickname ? (
+              <div className="flex gap-1.5 items-center">
+                <input
+                  className="field-input py-1.5 text-[14px] flex-1"
+                  placeholder="닉네임"
+                  value={nicknameDraft}
+                  onChange={(e) => setNicknameDraft(e.target.value)}
+                  maxLength={20}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveNickname();
+                    if (e.key === 'Escape') {
+                      setNicknameDraft(nickname);
+                      setEditingNickname(false);
+                    }
+                  }}
+                />
+                <button
+                  onClick={handleSaveNickname}
+                  disabled={savingNickname}
+                  className="px-3 py-1.5 rounded-xl bg-clay-500 text-white text-[12px] font-bold disabled:opacity-50"
+                >
+                  저장
+                </button>
+                <button
+                  onClick={() => {
+                    setNicknameDraft(nickname);
+                    setEditingNickname(false);
+                  }}
+                  className="px-2 py-1.5 rounded-xl text-[12px] text-subtle"
+                >
+                  취소
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-bold text-ink truncate">
+                    {nickname || '선생님'}
+                  </p>
+                  <p className="text-[12px] text-subtle truncate">{user?.email ?? '로그인됨'}</p>
+                </div>
+                <button
+                  onClick={() => setEditingNickname(true)}
+                  className="text-[12px] text-clay-600 font-semibold underline underline-offset-4 whitespace-nowrap"
+                >
+                  닉네임 변경
+                </button>
+              </div>
+            )}
           </div>
         </div>
         <p className="text-[12px] text-subtle mb-3">
