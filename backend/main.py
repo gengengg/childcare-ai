@@ -1164,60 +1164,71 @@ def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
     # ── 페이지 나누기 ──
     doc.add_page_break()
 
-    # ── 총평 및 활동평가 표 ──
+    # ── 총평 + 투약일지 + 출석 + 실내청결 통합 표 ──
     eval_days = ["월", "화", "수", "목", "금"]
     if sat_active:
         eval_days.append("토")
-    eval_table = doc.add_table(rows=len(eval_days), cols=3)
-    eval_table.style = "Table Grid"
+    bottom_days = n_days if sat_active else n_days - 1  # 5 or 6
+    bottom_cols = 1 + bottom_days  # 라벨 + 요일
 
-    first_col_cells = [eval_table.rows[i].cells[0] for i in range(len(eval_days))]
-    merged_first = first_col_cells[0]
-    for c in first_col_cells[1:]:
-        merged_first = merged_first.merge(c)
-    _set_cell(merged_first, "총평 및\n활동평가\n특이사항 등",
+    # 통합 표: eval 행수 + 투약/출석/실내청결 3행
+    combined_rows = len(eval_days) + 3
+    combined = doc.add_table(rows=combined_rows, cols=bottom_cols)
+    combined.style = "Table Grid"
+
+    # 컬럼 폭 통일
+    label_w2 = Cm(2.5)
+    day_w2 = Cm((21 - 2.0 - 2.5) / bottom_days)
+    for row in combined.rows:
+        row.cells[0].width = label_w2
+        for i in range(1, bottom_cols):
+            row.cells[i].width = day_w2
+
+    # (A) eval 행들: 첫 열 라벨 병합 세로, 둘째 열 요일 letter, 나머지 병합해 서술
+    for i, day in enumerate(eval_days):
+        row = combined.rows[i]
+        # 둘째 열: 요일
+        _set_cell(row.cells[1], day, bold=True, center=True, size=10)
+        # 셋째 이후 병합해 서술
+        m = row.cells[2]
+        for j in range(3, bottom_cols):
+            m = m.merge(row.cells[j])
+        text = str(req.evaluations.get(day, "") or "").strip() if isinstance(req.evaluations, dict) else ""
+        _set_cell(m, text, size=9)
+        _set_row_min_height(row, Cm(3.0))
+
+    # 첫 열 (총평 라벨) 세로 병합
+    eval_label_cell = combined.rows[0].cells[0]
+    for i in range(1, len(eval_days)):
+        eval_label_cell = eval_label_cell.merge(combined.rows[i].cells[0])
+    _set_cell(eval_label_cell, "총평 및\n활동평가\n특이사항 등",
               bold=True, center=True, size=10)
 
-    for i, day in enumerate(eval_days):
-        r = eval_table.rows[i]
-        r.cells[0].width = Cm(2.4)
-        r.cells[1].width = Cm(1.0)
-        r.cells[2].width = Cm(15.6)
-        _set_cell(r.cells[1], day, bold=True, center=True, size=10)
-        text = str(req.evaluations.get(day, "") or "").strip() if isinstance(req.evaluations, dict) else ""
-        _set_cell(r.cells[2], text, size=9)
-        _set_row_min_height(r, Cm(3.2))
-
-    # ── 하단: 투약/출석/청결 (원본과 동일) ──
-    doc.add_paragraph()
-    bottom_cols = 1 + n_days
-    bottom = doc.add_table(rows=3, cols=bottom_cols)
-    bottom.style = "Table Grid"
-    for row in bottom.rows:
-        row.cells[0].width = Cm(2.8)
-        for i in range(1, n_days):
-            row.cells[i].width = Cm(2.65)
-        row.cells[bottom_cols - 1].width = Cm(1.75)
-
-    r0 = bottom.rows[0]
+    # (B) 투약일지 행
+    med_idx = len(eval_days)
+    r0 = combined.rows[med_idx]
     _set_cell(r0.cells[0], "투 약 일 지", bold=True, center=True, size=10)
-    for i in range(n_days):
+    for i in range(bottom_days):
         _set_cell(r0.cells[1 + i], "", center=True, size=9)
-    _set_row_min_height(r0, Cm(1.5))
+    _set_row_min_height(r0, Cm(1.4))
 
-    r1 = bottom.rows[1]
+    # (C) 출석(결석) 행
+    att_idx = med_idx + 1
+    r1 = combined.rows[att_idx]
     _set_cell(r1.cells[0], "출석(결석)", bold=True, center=True, size=10)
-    for i in range(n_days):
+    for i in range(bottom_days):
         _set_cell(r1.cells[1 + i], "", center=True, size=9)
     _set_row_min_height(r1, Cm(0.9))
 
-    r2 = bottom.rows[2]
+    # (D) 실 내 청 결 행
+    clean_idx = att_idx + 1
+    r2 = combined.rows[clean_idx]
     _set_cell(r2.cells[0], "실 내 청 결", bold=True, center=True, size=10)
     m = r2.cells[1]
     for i in range(2, bottom_cols):
         m = m.merge(r2.cells[i])
     _set_cell(m, "*교실 / 화장실 청소\n*자체소독 – 교실 / 교구장 및 놀잇감\n*침구(가정으로 보내기)", size=9)
-    _set_row_min_height(r2, Cm(1.5))
+    _set_row_min_height(r2, Cm(1.4))
 
     buf = io.BytesIO()
     doc.save(buf)
