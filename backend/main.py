@@ -992,12 +992,28 @@ _STANDARD_SLOTS = [
 ]
 
 
+def _saturday_has_content(days: dict, evaluations: dict) -> bool:
+    """토요일에 활동 슬롯 or 총평 중 하나라도 내용이 있으면 True."""
+    if isinstance(days, dict):
+        sat = days.get("토")
+        if isinstance(sat, dict):
+            for k in ("morningFree", "outdoor", "special"):
+                if str(sat.get(k, "") or "").strip():
+                    return True
+    if isinstance(evaluations, dict):
+        if str(evaluations.get("토", "") or "").strip():
+            return True
+    return False
+
+
 def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
     """
     원본 PDF 레이아웃(A4 세로, 라벨+6일 컬럼)을 그대로 재현.
     - Page 1: 최상단 통합 헤더 + 정보 3행 + 요일별 활동 표
     - Page 2: 총평 표 + 투약/출석/청결 표
+    - 토요일에 아무 기록 없으면: 등원 슬롯 토 열에 "등원하는 영아가 없음" 표시, 총평 표에 토 행 제외
     """
+    sat_active = _saturday_has_content(req.days, req.evaluations)
     doc = Document()
     section = doc.sections[0]
     section.page_width = Cm(21)      # A4 세로
@@ -1114,10 +1130,21 @@ def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
             _set_row_min_height(row, Cm(1.2))
         else:
             _set_cell(row.cells[0], label, bold=True, center=True, size=9)
-            m = row.cells[1]
-            for i in range(2, n_cols):
-                m = m.merge(row.cells[i])
-            _set_cell(m, standard or "", size=9)
+            if sat_active:
+                # 토도 활성: 월~토 전체 병합
+                m = row.cells[1]
+                for i in range(2, n_cols):
+                    m = m.merge(row.cells[i])
+                _set_cell(m, standard or "", size=9)
+            else:
+                # 토 비활성: 월~금(1~5) 병합, 토(6) 별도
+                m = row.cells[1]
+                for i in range(2, n_cols - 1):
+                    m = m.merge(row.cells[i])
+                _set_cell(m, standard or "", size=9)
+                # 첫 등원 슬롯의 토 셀에만 "등원하는 영아가 없음", 나머지는 공백
+                sat_note = "등원하는\n영아가\n없음" if slot_i == 0 else ""
+                _set_cell(row.cells[n_cols - 1], sat_note, center=True, size=8)
             _set_row_min_height(row, Cm(1.0))
 
     # 담임/원장 정보는 표 위에 별도 문단으로 배치
@@ -1130,7 +1157,10 @@ def build_weekly_diary_docx(req: ExportWeeklyDiaryRequest) -> bytes:
 
     # ── 총평 및 활동평가 표 ──
     # 원본: 첫 열 "총평 및 활동평가 특이사항 등" 병합, 둘째 열 요일 문자, 셋째 열 서술
-    eval_days = [d for d in ["월", "화", "수", "목", "금"]]  # 원본은 토 없음
+    # 토는 활성일 때만 포함
+    eval_days = ["월", "화", "수", "목", "금"]
+    if sat_active:
+        eval_days.append("토")
     eval_table = doc.add_table(rows=len(eval_days), cols=3)
     eval_table.style = "Table Grid"
 

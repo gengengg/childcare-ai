@@ -7,7 +7,18 @@ const API_BASE_URL =
   'https://lesschildren-aigreater-production.up.railway.app';
 
 export const WEEK_DAYS = ['월', '화', '수', '목', '금', '토'] as const;
+export const WEEKDAYS_MON_TO_FRI = ['월', '화', '수', '목', '금'] as const;
 export type WeekDay = (typeof WEEK_DAYS)[number];
+
+/** 어떤 요일이든 세 슬롯 중 하나라도 내용 있으면 true */
+export function daySlotsHasContent(slots?: DaySlots): boolean {
+  if (!slots) return false;
+  return !!(
+    (slots.morningFree || '').trim() ||
+    (slots.outdoor || '').trim() ||
+    (slots.special || '').trim()
+  );
+}
 
 export type DaySlots = {
   morningFree: string;

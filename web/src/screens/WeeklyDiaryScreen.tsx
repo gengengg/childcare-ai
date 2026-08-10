@@ -7,9 +7,11 @@ import { CalendarIcon, SparkleIcon } from '@/components/icons';
 import { getMonthlyPlan, weekOfMonth, type MonthlyPlan } from '@/lib/monthlyPlans';
 import {
   WEEK_DAYS,
+  WEEKDAYS_MON_TO_FRI,
   autoDistribute,
   collectRecordsForWeek,
   datesForWeek,
+  daySlotsHasContent,
   emptyDaySlots,
   exportWeeklyDiaryDocx,
   generateWeeklyEvaluations,
@@ -78,6 +80,13 @@ export function WeeklyDiaryScreen() {
   const [distributing, setDistributing] = useState(false);
   const [generatingEval, setGeneratingEval] = useState(false);
   const [exporting, setExporting] = useState(false);
+  // 토요일은 기본 숨김. 기존 데이터에 토가 있으면 자동으로 켬. 사용자가 토글로 켤 수도 있음.
+  const [showSaturday, setShowSaturday] = useState(false);
+
+  const visibleDays = useMemo<WeekDay[]>(
+    () => (showSaturday ? [...WEEK_DAYS] : [...WEEKDAYS_MON_TO_FRI]),
+    [showSaturday]
+  );
 
   // 반 없으면 기본 반으로 폴백 (단일 반 사용자 대응)
   useEffect(() => {
@@ -110,6 +119,13 @@ export function WeeklyDiaryScreen() {
           setExpectations(existing.expectations);
           setDays(fillMissingDays(existing.days));
           setEvaluations(existing.evaluations);
+          // 기존 데이터에 토 내용 있으면 자동으로 켜기
+          if (
+            daySlotsHasContent(existing.days?.['토']) ||
+            (existing.evaluations?.['토'] || '').trim()
+          ) {
+            setShowSaturday(true);
+          }
         } else if (monthlyPlan) {
           // 신규 작성: 월간계획안에서 헤더 자동 채움
           setTheme(monthlyPlan.theme);
@@ -141,11 +157,11 @@ export function WeeklyDiaryScreen() {
     }
     setDistributing(true);
     try {
-      const distributed = autoDistribute(wk.activities, [...WEEK_DAYS]);
+      const distributed = autoDistribute(wk.activities, visibleDays);
       // 기존 값이 있는 셀은 유지, 빈 셀만 채움
       setDays((prev) => {
         const next = { ...prev };
-        for (const d of WEEK_DAYS) {
+        for (const d of visibleDays) {
           const existing = prev[d] ?? emptyDaySlots();
           const filled = distributed[d];
           next[d] = {
@@ -175,7 +191,7 @@ export function WeeklyDiaryScreen() {
         theme,
         subtheme,
         styleGuide,
-        days: [...WEEK_DAYS],
+        days: visibleDays,
         dates,
         slots: days,
         records,
@@ -183,7 +199,7 @@ export function WeeklyDiaryScreen() {
       // 기존 총평이 비어있는 것만 채움
       setEvaluations((prev) => {
         const next = { ...prev };
-        for (const d of WEEK_DAYS) {
+        for (const d of visibleDays) {
           if (!prev[d] && result[d]) next[d] = result[d];
         }
         return next;
@@ -325,7 +341,7 @@ export function WeeklyDiaryScreen() {
         </button>
       </div>
 
-      {WEEK_DAYS.map((day) => {
+      {visibleDays.map((day) => {
         const date = dates[day];
         const slots = days[day] ?? emptyDaySlots();
         return (
@@ -379,6 +395,24 @@ export function WeeklyDiaryScreen() {
           </Card>
         );
       })}
+
+      <button
+        onClick={() => {
+          if (showSaturday) {
+            // 토 내용 비우고 숨김
+            setDays((prev) => ({ ...prev, 토: emptyDaySlots() }));
+            setEvaluations((prev) => {
+              const next = { ...prev };
+              delete next['토'];
+              return next;
+            });
+          }
+          setShowSaturday((v) => !v);
+        }}
+        className="w-full mb-4 py-3 rounded-2xl border border-dashed border-cream-300 text-[13px] font-semibold text-clay-600 hover:bg-cream-100"
+      >
+        {showSaturday ? '토요일 숨기기' : '+ 토요일 추가'}
+      </button>
 
       <details className="mb-4">
         <summary className="text-[12px] text-subtle cursor-pointer py-2 px-1">
