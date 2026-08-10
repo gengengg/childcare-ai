@@ -7,7 +7,6 @@ import {
   enterGuestMode,
   resendSignupConfirmation,
   signInWithGoogle,
-  signInWithKakao,
   signInWithMagicLink,
   signInWithPassword,
   signUpWithPassword,
@@ -97,16 +96,6 @@ export function LoginScreen() {
       await signInWithGoogle();
     } catch (e) {
       toast.show(e instanceof Error ? e.message : 'Google 로그인 실패');
-      setBusy(false);
-    }
-  };
-
-  const handleKakao = async () => {
-    setBusy(true);
-    try {
-      await signInWithKakao();
-    } catch (e) {
-      toast.show(e instanceof Error ? e.message : 'Kakao 로그인 실패');
       setBusy(false);
     }
   };
@@ -268,15 +257,6 @@ export function LoginScreen() {
           Google로 계속하기
         </button>
 
-        <button
-          onClick={handleKakao}
-          disabled={busy}
-          className="w-full flex items-center justify-center gap-2 bg-[#FEE500] rounded-2xl py-3 px-5 text-[14px] font-semibold text-[#191919] hover:brightness-95 disabled:opacity-50 transition"
-        >
-          <KakaoIcon />
-          카카오로 계속하기
-        </button>
-
         <button className="btn-outline w-full" onClick={handleMagicLink} disabled={busy}>
           이메일 링크로 로그인 (비밀번호 없이)
         </button>
@@ -292,14 +272,6 @@ export function LoginScreen() {
         </p>
       </div>
     </div>
-  );
-}
-
-function KakaoIcon() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" aria-hidden fill="#191919">
-      <path d="M12 3C6.48 3 2 6.48 2 10.8c0 2.7 1.8 5.1 4.5 6.5-.2.7-.7 2.6-.8 3-.1.4.2.4.4.3.1-.1 2.6-1.8 3.7-2.5.7.1 1.4.2 2.2.2 5.52 0 10-3.48 10-7.8C22 6.48 17.52 3 12 3z" />
-    </svg>
   );
 }
 
