@@ -175,6 +175,8 @@ export function WriteScreen() {
   useEffect(() => {
     (async () => {
       if (!(await hasSeenTour())) {
+        // 튜토리얼이 뜨는 순간 '봤음' 처리. 중간에 닫거나 새로고침해도 재출현 안 함.
+        await markTourSeen();
         setTimeout(() => setTourOn(true), 500);
       }
     })();
@@ -182,7 +184,6 @@ export function WriteScreen() {
 
   const finishTour = async () => {
     setTourOn(false);
-    await markTourSeen();
   };
 
   useEffect(() => {
@@ -425,7 +426,6 @@ export function WriteScreen() {
       mealNote,
       napNote,
       healthNote,
-      photos,
       aiDraft: draftText,
       teacherFinal: finalText,
     });
@@ -698,6 +698,9 @@ export function WriteScreen() {
             >
               <CameraIcon size={18} /> 사진 넣기 (선택)
             </button>
+            <p className="text-[11px] text-subtle text-center mt-1.5">
+              사진은 AI 초안 만들기에만 쓰이고 저장되지 않아요.
+            </p>
 
             {photos.length > 0 && (
               <div className="mt-3 grid grid-cols-4 gap-2">

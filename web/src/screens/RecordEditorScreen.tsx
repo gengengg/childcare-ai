@@ -195,7 +195,6 @@ export function RecordEditorScreen() {
       mealNote,
       napNote,
       healthNote,
-      photos,
       aiDraft: draftText,
       teacherFinal: finalText,
     });
@@ -309,6 +308,9 @@ export function RecordEditorScreen() {
             >
               <CameraIcon size={18} /> 사진 넣기
             </button>
+            <p className="text-[11px] text-subtle text-center mt-1.5">
+              사진은 AI 초안 만들기에만 쓰이고 저장되지 않아요.
+            </p>
             {photos.length > 0 && (
               <div className="mt-3 grid grid-cols-4 gap-2">
                 {photos.map((src, i) => (

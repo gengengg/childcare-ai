@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { useToast } from '@/components/Toast';
@@ -11,6 +11,7 @@ import {
   signInWithPassword,
   signUpWithPassword,
 } from '@/lib/auth';
+import { setRememberMe } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { PencilIcon, SparkleIcon } from '@/components/icons';
 import { VerifyCodePanel } from '@/components/VerifyCodePanel';
@@ -36,6 +37,17 @@ export function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [needsConfirm, setNeedsConfirm] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
+  const [remember, setRemember] = useState(true);
+
+  // 마운트 시 기본값(자동 로그인 ON)으로 스토리지 어댑터 플래그 리셋
+  useEffect(() => {
+    setRememberMe(true);
+  }, []);
+
+  const handleRememberChange = (checked: boolean) => {
+    setRemember(checked);
+    setRememberMe(checked);
+  };
 
   const handleSubmit = async () => {
     const em = email.trim().toLowerCase();
@@ -262,6 +274,19 @@ export function LoginScreen() {
             />
           </>
         )}
+
+        <label className="flex items-center gap-2 py-1 px-1 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => handleRememberChange(e.target.checked)}
+            className="w-4 h-4 accent-clay-500"
+          />
+          <span className="text-[13px] text-ink">자동 로그인</span>
+          <span className="text-[11px] text-subtle">
+            (끄면 브라우저 종료 시 로그아웃)
+          </span>
+        </label>
 
         <button
           onClick={handleSubmit}

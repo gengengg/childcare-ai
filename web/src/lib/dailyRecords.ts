@@ -125,7 +125,9 @@ export async function saveDailyRecord(
       health_note: record.healthNote,
       ai_draft: record.aiDraft,
       teacher_final: record.teacherFinal,
-      photos: record.photos ?? [],
+      // 사진은 AI 초안 생성용으로만 쓰고 DB에 저장하지 않음.
+      // Postgrest 1MB 페이로드 제한 + 무의미한 저장공간 낭비 방지.
+      photos: [],
     };
     const { data, error } = await supabase
       .from('daily_records')
@@ -221,14 +223,14 @@ async function saveLocal(
     saved = {
       ...records[idx],
       ...record,
-      photos: record.photos ?? records[idx].photos ?? [],
+      photos: [],
       updatedAt: now,
     };
     records[idx] = saved;
   } else {
     saved = {
       ...record,
-      photos: record.photos ?? [],
+      photos: [],
       id: `${record.childId}-${record.date}`,
       createdAt: now,
       updatedAt: now,
