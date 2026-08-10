@@ -21,6 +21,7 @@ import { FindIdScreen } from './screens/FindIdScreen';
 import { FindPasswordScreen } from './screens/FindPasswordScreen';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 import { WeeklyDiaryScreen } from './screens/WeeklyDiaryScreen';
+import { WeeklyHubScreen } from './screens/WeeklyHubScreen';
 
 export default function App() {
   return (
@@ -30,30 +31,38 @@ export default function App() {
           <AuthGate>
             <OnboardingGate>
               <Routes>
-                <Route path="login" element={<LoginScreen />} />
-                <Route path="nickname" element={<NicknameScreen />} />
-                <Route path="find-id" element={<FindIdScreen />} />
-                <Route path="find-password" element={<FindPasswordScreen />} />
-                <Route path="reset-password" element={<ResetPasswordScreen />} />
+                {/* 인증 관련 (하단 탭 없음) */}
+                <Route element={<SubLayout />}>
+                  <Route path="login" element={<LoginScreen />} />
+                  <Route path="nickname" element={<NicknameScreen />} />
+                  <Route path="find-id" element={<FindIdScreen />} />
+                  <Route path="find-password" element={<FindPasswordScreen />} />
+                  <Route path="reset-password" element={<ResetPasswordScreen />} />
+                  <Route path="onboarding" element={<OnboardingScreen />} />
+                  <Route path="style-setup" element={<StyleSetupScreen />} />
+                </Route>
+
+                {/* 앱 메인 (하단 탭 항상 표시) */}
                 <Route element={<AppLayout />}>
+                  {/* 5개 메인 탭 */}
                   <Route index element={<WriteScreen />} />
                   <Route path="records" element={<RecordsScreen />} />
+                  <Route path="weekly" element={<WeeklyHubScreen />} />
                   <Route path="children" element={<ChildrenScreen />} />
-                </Route>
-                <Route element={<SubLayout />}>
+                  <Route path="settings" element={<SettingsScreen />} />
+
+                  {/* 서브 화면 (하단 탭 유지) */}
                   <Route path="record/:childId" element={<RecordEditorScreen />} />
                   <Route path="class-activity" element={<ClassActivityScreen />} />
                   <Route path="observation" element={<ObservationScreen />} />
-                  <Route path="style-setup" element={<StyleSetupScreen />} />
-                  <Route path="onboarding" element={<OnboardingScreen />} />
                   <Route path="manage-children" element={<ManageChildrenScreen />} />
                   <Route path="calendar" element={<CalendarScreen />} />
                   <Route
                     path="weekly-diary/:className/:year/:month/:week"
                     element={<WeeklyDiaryScreen />}
                   />
-                  <Route path="settings" element={<SettingsScreen />} />
                 </Route>
+
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </OnboardingGate>

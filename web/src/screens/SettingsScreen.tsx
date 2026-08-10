@@ -69,7 +69,7 @@ export function SettingsScreen() {
 
   return (
     <>
-      <Header back icon={<SettingsIcon />} title="설정" />
+      <Header icon={<SettingsIcon />} title="설정" />
 
       <div className="tabs mb-4">
         {TABS.map((t) => (

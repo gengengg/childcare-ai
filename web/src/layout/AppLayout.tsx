@@ -2,9 +2,8 @@ import { Outlet } from 'react-router-dom';
 import { BottomTabBar } from './BottomTabBar';
 
 /**
- * 모든 메인 화면의 공통 레이아웃.
- * - 최대 너비 med (모바일 우선)
- * - 하단 탭바 영역만큼 padding
+ * 통합 레이아웃 — 모든 앱 화면(로그인 제외)에서 하단 탭 항상 표시.
+ * 사용자가 어느 화면에 있어도 바로 다른 탭으로 이동 가능.
  */
 export function AppLayout() {
   return (
@@ -17,7 +16,7 @@ export function AppLayout() {
   );
 }
 
-/** 하단 탭이 없는 서브 화면용 레이아웃 (예: 기록 작성) */
+/** 인증/온보딩 등 하단 탭이 없는 특수 화면용 (로그인 전 상태) */
 export function SubLayout() {
   return (
     <div className="min-h-full bg-cream-50">
