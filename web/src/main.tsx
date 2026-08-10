@@ -12,7 +12,7 @@ async function initNative() {
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar');
     await StatusBar.setStyle({ style: Style.Light });
-    await StatusBar.setBackgroundColor({ color: '#FDFAF4' });
+    await StatusBar.setBackgroundColor({ color: '#F9FAFB' });
   } catch {
     // 웹 폴백 시 무시
   }

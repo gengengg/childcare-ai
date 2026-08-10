@@ -7,7 +7,7 @@ const KEY = 'theme_pref_v1';
 export async function getThemePref(): Promise<ThemePref> {
   const v = await getItem(KEY);
   if (v === 'light' || v === 'dark' || v === 'auto') return v;
-  return 'auto';
+  return 'light';
 }
 
 export async function setThemePref(t: ThemePref): Promise<void> {
@@ -28,7 +28,7 @@ export function applyThemePref(t: ThemePref): void {
   root.classList.toggle('dark', dark);
   // status bar / mobile theme color
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (meta) meta.content = dark ? '#161210' : '#FDFAF4';
+  if (meta) meta.content = dark ? '#0F0F12' : '#F9FAFB';
 }
 
 /**
@@ -39,10 +39,10 @@ export function initTheme(): void {
   // 저장된 값 즉시 적용 (동기 localStorage → 깜박임 최소)
   try {
     const v = typeof window !== 'undefined' ? window.localStorage.getItem(KEY) : null;
-    const t: ThemePref = v === 'light' || v === 'dark' ? v : 'auto';
+    const t: ThemePref = v === 'light' || v === 'dark' || v === 'auto' ? v : 'light';
     applyThemePref(t);
   } catch {
-    applyThemePref('auto');
+    applyThemePref('light');
   }
 
   if (typeof window !== 'undefined' && window.matchMedia) {
