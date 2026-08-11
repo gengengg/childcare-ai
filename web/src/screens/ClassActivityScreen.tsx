@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
@@ -34,6 +34,8 @@ export function ClassActivityScreen() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showClass, setShowClass] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [autoSaved, setAutoSaved] = useState(false);
+  const skipAutoSaveRef = useRef(true);
 
   useEffect(() => {
     (async () => {
@@ -59,7 +61,10 @@ export function ClassActivityScreen() {
 
   useEffect(() => {
     (async () => {
-      if (!selectedClass || !selectedDate) return;
+      if (showClass && !selectedClass) return;
+      if (!selectedDate) return;
+      skipAutoSaveRef.current = true;
+      setAutoSaved(false);
       const saved = await getClassActivity(selectedClass, selectedDate);
       if (saved && saved.activities.length > 0) {
         setActivities(saved.activities);
@@ -68,8 +73,36 @@ export function ClassActivityScreen() {
         setActivities([makeEmptyActivity()]);
         setIsLoaded(false);
       }
+      // 로드 상태 반영이 리렌더에 반영된 뒤 자동 저장 재활성
+      setTimeout(() => {
+        skipAutoSaveRef.current = false;
+      }, 100);
     })();
-  }, [selectedClass, selectedDate]);
+  }, [selectedClass, selectedDate, showClass]);
+
+  const performSave = useCallback(async () => {
+    if (showClass && !selectedClass) return false;
+    if (!activities.some((a) => a.title.trim() || a.memo.trim())) return false;
+    await saveClassActivity({
+      className: selectedClass,
+      date: selectedDate,
+      activities,
+    });
+    return true;
+  }, [selectedClass, selectedDate, activities, showClass]);
+
+  // 편집 중 자동 저장 (debounce 1.2초)
+  useEffect(() => {
+    if (skipAutoSaveRef.current) return;
+    const t = setTimeout(async () => {
+      const ok = await performSave();
+      if (ok) {
+        setIsLoaded(true);
+        setAutoSaved(true);
+      }
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [activities, performSave]);
 
   const update = (id: string, field: keyof Activity, value: string) =>
     setActivities((prev) => prev.map((a) => (a.id === id ? { ...a, [field]: value } : a)));
@@ -101,16 +134,12 @@ export function ClassActivityScreen() {
       toast.show('활동명을 하나 이상 입력해주세요.', 'error');
       return;
     }
-    await saveClassActivity({
-      className: selectedClass,
-      date: selectedDate,
-      activities,
-    });
-    setIsLoaded(true);
-    toast.show(
-      selectedClass ? `${selectedClass} 공통 활동을 저장했어요.` : '공통 활동을 저장했어요.',
-      'success'
-    );
+    const ok = await performSave();
+    if (ok) {
+      setIsLoaded(true);
+      setAutoSaved(true);
+      toast.show('저장했어요.', 'success');
+    }
   };
 
   return (
@@ -118,7 +147,7 @@ export function ClassActivityScreen() {
       <Header
         back
         icon={<SparkleIcon />}
-        title="반별 오늘 활동"
+        title="오늘 활동 내용"
         subtitle="반마다 한 번만 입력하면 아이별 알림장에서 자동으로 불러와요"
       />
 
@@ -185,7 +214,7 @@ export function ClassActivityScreen() {
       <Card className="mb-4" hint="오늘의 활동">
         {isLoaded && (
           <div className="rounded-xl bg-clay-500/10 border border-clay-500/20 px-3 py-2 mb-4 text-[13px] font-semibold text-clay-700">
-            저장된 활동을 불러왔어요. 수정 후 다시 저장할 수 있어요.
+            {autoSaved ? '수정 사항이 자동 저장돼요.' : '저장된 활동을 불러왔어요.'}
           </div>
         )}
 
@@ -239,7 +268,7 @@ export function ClassActivityScreen() {
       </Card>
 
       <button onClick={handleSave} className="btn-primary w-full py-4">
-        반별 활동 저장하기
+        저장하기
       </button>
 
       <MonthlyPlanPicker

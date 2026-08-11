@@ -485,7 +485,7 @@ function DataTab() {
 
   const handleClearAll = async () => {
     const ok = window.confirm(
-      '정말로 모든 데이터를 초기화할까요?\n등록된 아이·알림장·공통 활동·문체 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.'
+      '정말로 모든 데이터를 초기화할까요?\n등록된 아이·알림장·오늘 활동 내용·문체 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.'
     );
     if (!ok) return;
     const confirm2 = window.prompt('확인을 위해 "초기화"라고 입력해주세요.');
@@ -531,7 +531,7 @@ function DataTab() {
         <p className="text-[12px] text-subtle mb-3">
           {mode === 'authed'
             ? '이 기기에 남아 있는 게스트용 로컬 데이터만 삭제해요. 클라우드에 저장된 계정 데이터는 그대로 남습니다.'
-            : '아이·알림장·공통 활동·문체 설정 등 모든 저장 데이터를 지워요.'}
+            : '아이·알림장·오늘 활동 내용·문체 설정 등 모든 저장 데이터를 지워요.'}
         </p>
         <button
           onClick={handleClearAll}

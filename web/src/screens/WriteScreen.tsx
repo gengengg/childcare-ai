@@ -203,6 +203,7 @@ export function WriteScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
+  const skipAutoSaveRef = useRef(true);
   const [loadedFromClass, setLoadedFromClass] = useState(false);
   const [showClass, setShowClass] = useState(false);
   const [tourOn, setTourOn] = useState(false);
@@ -238,58 +239,87 @@ export function WriteScreen() {
   // 개인 모드: 아이 바뀔 때 저장 기록 + 반 공통 활동 로드
   useEffect(() => {
     if (mode !== 'personal') return;
+    skipAutoSaveRef.current = true;
     (async () => {
-      if (!child) {
-        resetForm();
-        return;
-      }
-      const saved = await getDailyRecord(child.id, selectedDate);
-      const classAct = await getClassActivity(child.className, selectedDate);
-      const savedHasActivities =
-        !!saved?.activities?.length &&
-        saved.activities.some((a) => a.title.trim() || a.memo.trim());
+      try {
+        if (!child) {
+          resetForm();
+          return;
+        }
+        const saved = await getDailyRecord(child.id, selectedDate);
+        const classAct = await getClassActivity(child.className, selectedDate);
+        const savedHasActivities =
+          !!saved?.activities?.length &&
+          saved.activities.some((a) => a.title.trim() || a.memo.trim());
 
-      if (saved) {
-        if (!savedHasActivities && classAct && classAct.activities.length > 0) {
+        if (saved) {
+          if (!savedHasActivities && classAct && classAct.activities.length > 0) {
+            setActivities(cloneActivitiesWithNewIds(classAct.activities));
+            setLoadedFromClass(true);
+          } else {
+            setActivities(saved.activities?.length ? saved.activities : [makeEmptyActivity()]);
+            setLoadedFromClass(false);
+          }
+          setMealNote(saved.mealNote ?? '');
+          setNapNote(saved.napNote ?? '');
+          setHealthNote(saved.healthNote ?? '');
+          setPhotos(saved.photos ?? []);
+          setAiDraft(saved.aiDraft ?? '');
+          setTeacherFinal(saved.teacherFinal ?? '');
+          setSaveState(saved.teacherFinal ? 'saved' : 'idle');
+          setShowDaily(!!(saved.mealNote || saved.napNote || saved.healthNote));
+        } else if (classAct && classAct.activities.length > 0) {
           setActivities(cloneActivitiesWithNewIds(classAct.activities));
           setLoadedFromClass(true);
+          resetOutputs();
         } else {
-          setActivities(saved.activities?.length ? saved.activities : [makeEmptyActivity()]);
+          setActivities([makeEmptyActivity()]);
           setLoadedFromClass(false);
+          resetOutputs();
         }
-        setMealNote(saved.mealNote ?? '');
-        setNapNote(saved.napNote ?? '');
-        setHealthNote(saved.healthNote ?? '');
-        setPhotos(saved.photos ?? []);
-        setAiDraft(saved.aiDraft ?? '');
-        setTeacherFinal(saved.teacherFinal ?? '');
-        setSaveState(saved.teacherFinal ? 'saved' : 'idle');
-        setShowDaily(!!(saved.mealNote || saved.napNote || saved.healthNote));
-      } else if (classAct && classAct.activities.length > 0) {
-        setActivities(cloneActivitiesWithNewIds(classAct.activities));
-        setLoadedFromClass(true);
-        resetOutputs();
-      } else {
-        setActivities([makeEmptyActivity()]);
-        setLoadedFromClass(false);
-        resetOutputs();
+      } finally {
+        // state 반영이 다음 렌더에 반영된 뒤 자동 저장 활성화
+        setTimeout(() => { skipAutoSaveRef.current = false; }, 100);
       }
     })();
   }, [child?.id, child?.className, selectedDate, mode]);
 
-  // 공통 모드: 반 바뀔 때 공통 활동 로드
+  // 공통 모드: 반 바뀔 때 이전 저장 알림장 우선 복원, 없으면 오늘 활동 내용 로드
   useEffect(() => {
     if (mode !== 'common') return;
+    skipAutoSaveRef.current = true;
     (async () => {
-      resetForm();
-      if (!commonClassName) return;
-      const classAct = await getClassActivity(commonClassName, selectedDate);
-      if (classAct && classAct.activities.length > 0) {
-        setActivities(cloneActivitiesWithNewIds(classAct.activities));
-        setLoadedFromClass(true);
+      try {
+        resetForm();
+        const cn = commonClassName.trim();
+        if (showClass && !cn) return;
+        const commonChildId = cn
+          ? `common-${cn}-${selectedDate}`
+          : `common-${selectedDate}`;
+        const saved = await getDailyRecord(commonChildId, selectedDate);
+        if (saved) {
+          setActivities(saved.activities?.length ? saved.activities : [makeEmptyActivity()]);
+          setMealNote(saved.mealNote ?? '');
+          setNapNote(saved.napNote ?? '');
+          setHealthNote(saved.healthNote ?? '');
+          setAiDraft(saved.aiDraft ?? '');
+          setTeacherFinal(saved.teacherFinal ?? '');
+          setSaveState(saved.teacherFinal ? 'saved' : 'idle');
+          setShowDaily(!!(saved.mealNote || saved.napNote || saved.healthNote));
+          setLoadedFromClass(false);
+          return;
+        }
+        if (!cn) return;
+        const classAct = await getClassActivity(cn, selectedDate);
+        if (classAct && classAct.activities.length > 0) {
+          setActivities(cloneActivitiesWithNewIds(classAct.activities));
+          setLoadedFromClass(true);
+        }
+      } finally {
+        setTimeout(() => { skipAutoSaveRef.current = false; }, 100);
       }
     })();
-  }, [commonClassName, selectedDate, mode]);
+  }, [commonClassName, selectedDate, mode, showClass]);
 
   function resetOutputs() {
     setMealNote(''); setNapNote(''); setHealthNote('');
@@ -336,18 +366,18 @@ export function WriteScreen() {
     const cls = explicit || getDefaultClassName(children);
     const classAct = await getClassActivity(cls, selectedDate);
     if (!classAct || classAct.activities.length === 0) {
-      toast.show(`오늘 저장된 "${cls}" 공통 활동이 없어요.`, 'error');
+      toast.show(`오늘 저장된 "${cls}" 활동이 없어요.`, 'error');
       return;
     }
     const hasContent = activities.some((a) => a.title.trim() || a.memo.trim());
     const fetched = cloneActivitiesWithNewIds(classAct.activities);
     if (hasContent) {
       setActivities((prev) => [...prev, ...fetched]);
-      toast.show(`공통 활동 ${fetched.length}개를 이어붙였어요.`, 'success');
+      toast.show(`오늘 활동 내용 ${fetched.length}개를 이어붙였어요.`, 'success');
     } else {
       setActivities(fetched);
       setLoadedFromClass(true);
-      toast.show(`공통 활동 ${fetched.length}개를 불러왔어요.`, 'success');
+      toast.show(`오늘 활동 내용 ${fetched.length}개를 불러왔어요.`, 'success');
     }
   };
 
@@ -488,6 +518,19 @@ export function WriteScreen() {
     }
   };
 
+  // 편집 중 자동 저장 (AI 초안 이후, debounce 1.2초)
+  const persistRef = useRef(persistRecord);
+  persistRef.current = persistRecord;
+  useEffect(() => {
+    if (skipAutoSaveRef.current) return;
+    if (!teacherFinal.trim()) return;
+    const t = setTimeout(async () => {
+      const ok = await persistRef.current(aiDraft, teacherFinal);
+      if (ok) setSaveState('saved');
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [teacherFinal, activities, mealNote, napNote, healthNote, aiDraft]);
+
   /**
    * 공통 알림장을 반의 아이 각각에게 개인 알림장으로 복제 저장.
    * - 대상: commonClassName 이 있으면 해당 반 아이, 없으면 등록된 전체 아이
@@ -575,7 +618,7 @@ export function WriteScreen() {
       <div className="grid grid-cols-3 gap-2 mb-4">
         <Shortcut
           icon={<GridIcon size={20} />}
-          label="반 공통 활동"
+          label="오늘 활동 내용"
           onClick={() => navigate('/class-activity')}
           tourKey="class-activity"
         />
@@ -682,7 +725,7 @@ export function WriteScreen() {
       <Card className="mb-4" hint="오늘 무엇을 했나요?" data-tour="write-card">
         {loadedFromClass && (
           <div className="rounded-xl bg-clay-500/10 border border-clay-500/30 px-3 py-2 mb-4 text-[13px] font-semibold text-clay-700 flex items-center gap-2">
-            <CheckIcon size={14} /> 반 공통 활동을 불러왔어요.
+            <CheckIcon size={14} /> 오늘 활동 내용을 불러왔어요.
           </div>
         )}
         <div className="space-y-4">
@@ -739,7 +782,7 @@ export function WriteScreen() {
               className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-700
                 hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
             >
-              <GridIcon size={18} /> 공통 활동 가져오기
+              <GridIcon size={18} /> 오늘 활동 내용 가져오기
             </button>
           </div>
 
