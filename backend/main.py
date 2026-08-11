@@ -148,7 +148,7 @@ def call_openai_with_images(prompt: str, instructions: str, images: List[str], m
             "type": "image_url",
             "image_url": {
                 "url": f"data:{mime};base64,{b64}",
-                "detail": "high",
+                "detail": "low",
             },
         })
     content.append({"type": "text", "text": prompt})
