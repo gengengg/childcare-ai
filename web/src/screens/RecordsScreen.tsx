@@ -12,6 +12,7 @@ import {
   getAllDailyRecords,
   type DailyRecord,
 } from '@/lib/dailyRecords';
+import { getChildren, type Child } from '@/lib/children';
 
 function formatDate(d: string) {
   const dt = new Date(d + 'T00:00:00');
@@ -29,6 +30,7 @@ export function RecordsScreen() {
   const navigate = useNavigate();
   const toast = useToast();
   const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [children, setChildren] = useState<Child[]>([]);
   const [filter, setFilter] = useState<string>('');
   const [openId, setOpenId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,12 +38,13 @@ export function RecordsScreen() {
   const load = async () => {
     setLoading(true);
     try {
-      const list = await getAllDailyRecords();
+      const [list, kids] = await Promise.all([getAllDailyRecords(), getChildren()]);
       list.sort((a, b) => {
         if (a.date !== b.date) return a.date > b.date ? -1 : 1;
         return (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '');
       });
       setRecords(list);
+      setChildren(kids);
     } finally {
       setLoading(false);
     }
@@ -54,21 +57,25 @@ export function RecordsScreen() {
   const hasCommon = useMemo(() => records.some(isCommonRecord), [records]);
 
   const childOptions = useMemo(() => {
-    const seen = new Set<string>();
-    const list: { childId: string; name: string; count: number }[] = [];
+    // 폴더 이름은 등록된 아이(children) 최신 이름을 우선 사용.
+    // 아이 이름이 수정되면 다음 방문 시 자동 반영.
+    // records 에만 존재하는 childId(등록되지 않은 이름) 는 record 의 childName 사용.
+    const nameById = new Map(children.map((c) => [c.id, c.name]));
+    const map = new Map<string, { childId: string; name: string; count: number }>();
     for (const r of records) {
       if (isCommonRecord(r)) continue;
-      if (!r.childName) continue;
-      if (seen.has(r.childId)) {
-        const item = list.find((x) => x.childId === r.childId);
-        if (item) item.count += 1;
-        continue;
+      const name = nameById.get(r.childId) ?? r.childName;
+      if (!name) continue;
+      const existing = map.get(r.childId);
+      if (existing) {
+        existing.count += 1;
+        existing.name = name;
+      } else {
+        map.set(r.childId, { childId: r.childId, name, count: 1 });
       }
-      seen.add(r.childId);
-      list.push({ childId: r.childId, name: r.childName, count: 1 });
     }
-    return list;
-  }, [records]);
+    return Array.from(map.values());
+  }, [records, children]);
 
   const filtered = useMemo(() => {
     if (filter === '') return records;
@@ -86,6 +93,12 @@ export function RecordsScreen() {
     return Array.from(map.entries());
   }, [filtered]);
 
+  const displayName = (r: DailyRecord): string => {
+    if (isCommonRecord(r)) return r.childName || '공통 알림장';
+    const registered = children.find((c) => c.id === r.childId);
+    return registered?.name || r.childName || '이름 없음';
+  };
+
   const handleCopy = async (r: DailyRecord) => {
     try {
       await navigator.clipboard.writeText(r.teacherFinal || r.aiDraft || '');
@@ -96,7 +109,7 @@ export function RecordsScreen() {
   };
 
   const handleDelete = async (r: DailyRecord) => {
-    const ok = window.confirm(`${r.childName}의 ${formatDate(r.date)} 알림장을 삭제할까요?`);
+    const ok = window.confirm(`${displayName(r)}의 ${formatDate(r.date)} 알림장을 삭제할까요?`);
     if (!ok) return;
     await deleteDailyRecord(r.childId, r.date);
     await load();
@@ -179,11 +192,11 @@ export function RecordsScreen() {
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-cream-200 text-clay-700 flex items-center justify-center font-bold">
-                            {r.childName.slice(0, 1) || '?'}
+                            {displayName(r).slice(0, 1) || '?'}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-[15px] font-bold text-ink truncate">
-                              {r.childName || '이름 없음'}
+                              {displayName(r)}
                             </div>
                             <div className="text-[12px] text-subtle truncate">
                               {r.className && `${r.className} · `}
