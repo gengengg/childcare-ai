@@ -9,6 +9,7 @@ import { Mascot } from '@/components/Mascot';
 import { SkeletonListItem } from '@/components/Skeleton';
 import {
   deleteDailyRecord,
+  deleteRecordsByChildId,
   getAllDailyRecords,
   type DailyRecord,
 } from '@/lib/dailyRecords';
@@ -152,6 +153,25 @@ export function RecordsScreen() {
     toast.show('삭제했어요.');
   };
 
+  const handleClearArchiveFolder = async (
+    e: React.MouseEvent,
+    c: { childId: string; name: string; count: number }
+  ) => {
+    e.stopPropagation();
+    const ok = window.confirm(
+      `"${c.name}" 폴더의 알림장 ${c.count}개를 모두 삭제할까요?\n이 작업은 되돌릴 수 없어요.`
+    );
+    if (!ok) return;
+    try {
+      await deleteRecordsByChildId(c.childId);
+      if (archivedChildId === c.childId) setArchivedChildId('');
+      await load();
+      toast.show(`${c.name} 폴더를 비웠어요.`, 'success');
+    } catch {
+      toast.show('삭제 중 오류가 났어요.', 'error');
+    }
+  };
+
   return (
     <>
       <Header
@@ -236,20 +256,31 @@ export function RecordsScreen() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               {archivedByChild.map((c) => (
-                <button
-                  key={c.childId}
-                  onClick={() => {
-                    setArchivedChildId(c.childId);
-                    setOpenId(null);
-                  }}
-                  className="flex flex-col items-center gap-2 py-5 rounded-2xl
-                    bg-cream-50 border border-cream-200 text-clay-700
-                    active:bg-cream-100 transition"
-                >
-                  <FolderIcon size={26} />
-                  <div className="text-[14px] font-bold text-ink">{c.name}</div>
-                  <div className="text-[11px] text-subtle">알림장 {c.count}개</div>
-                </button>
+                <div key={c.childId} className="relative">
+                  <button
+                    onClick={() => {
+                      setArchivedChildId(c.childId);
+                      setOpenId(null);
+                    }}
+                    className="w-full flex flex-col items-center gap-2 py-5 rounded-2xl
+                      bg-cream-50 border border-cream-200 text-clay-700
+                      active:bg-cream-100 transition"
+                  >
+                    <FolderIcon size={26} />
+                    <div className="text-[14px] font-bold text-ink">{c.name}</div>
+                    <div className="text-[11px] text-subtle">알림장 {c.count}개</div>
+                  </button>
+                  <button
+                    onClick={(e) => handleClearArchiveFolder(e, c)}
+                    aria-label={`${c.name} 폴더 비우기`}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full
+                      bg-surface/80 border border-cream-200 text-subtle
+                      flex items-center justify-center
+                      hover:text-red-500 hover:border-red-300 active:bg-red-50 transition"
+                  >
+                    <TrashIcon size={13} />
+                  </button>
+                </div>
               ))}
             </div>
           </Card>

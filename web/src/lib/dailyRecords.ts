@@ -163,6 +163,24 @@ export async function getDailyRecord(
   return records.find((r) => r.childId === childId && r.date === date) ?? null;
 }
 
+/** 특정 childId 에 속한 모든 알림장 일괄 삭제. 삭제된 개수 반환. */
+export async function deleteRecordsByChildId(childId: string): Promise<number> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const { error, count } = await supabase
+      .from('daily_records')
+      .delete({ count: 'exact' })
+      .eq('user_id', userId)
+      .eq('child_id', childId);
+    if (error) throw error;
+    return count ?? 0;
+  }
+  const records = await getAllLocal();
+  const filtered = records.filter((r) => r.childId !== childId);
+  await setItem(DAILY_RECORDS_KEY, JSON.stringify(filtered));
+  return records.length - filtered.length;
+}
+
 export async function deleteDailyRecord(childId: string, date: string): Promise<void> {
   const userId = await getSupabaseUserId();
   if (userId) {
