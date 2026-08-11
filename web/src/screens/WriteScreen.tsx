@@ -107,17 +107,31 @@ const TOUR_STEPS: TourStep[] = [
     mascot: 'wave',
     description: (
       <>
-        오늘 뭐 했는지만 적어주세요. <strong>AI가 초안</strong>을 만들어 드려요.
+        오늘 뭐 했는지만 적으면 <strong>AI가 초안</strong>을 만들어드려요.
+        쓰는 중에도 <strong>자동 저장</strong>되니 마음 놓고 쓰세요!
       </>
     ),
   },
   {
     selector: '[data-tour="mode-toggle"]',
-    title: '개인 vs 공통',
+    title: '공통 vs 개인',
     mascot: 'thinking',
     description: (
       <>
-        반 전체엔 <strong>공통</strong>, 아이별로 다르게 쓸 땐 <strong>개인</strong>.
+        반 전체엔 <strong>공통 알림장</strong>, 아이별로 다르게 쓸 땐{' '}
+        <strong>개인 알림장</strong>을 골라주세요. 공통 알림장은 <strong>아이 별로 적용</strong>
+        해서 개인 알림장으로 한 번에 저장할 수도 있어요!
+      </>
+    ),
+  },
+  {
+    selector: '[data-tour="class-activity"]',
+    title: '오늘 활동 내용',
+    mascot: 'point',
+    description: (
+      <>
+        오늘 반의 활동을 여기에 미리 정리해 두면, 알림장을 쓸 때{' '}
+        <strong>바로 불러올 수 있어요</strong>!
       </>
     ),
   },
@@ -127,17 +141,19 @@ const TOUR_STEPS: TourStep[] = [
     mascot: 'point',
     description: (
       <>
-        작성한 알림장이 여기 <strong>다 쌓여요</strong>. 언제든 다시 열기.
+        작성한 알림장이 여기 <strong>다 쌓여요</strong>. 전체·공통·
+        <strong>아이별 폴더</strong>·보관으로 정리돼서 언제든 다시 열어볼 수 있어요!
       </>
     ),
   },
   {
     selector: '[data-tour="tab-weekly"]',
-    title: '학급 (신규!)',
+    title: '학급',
     mascot: 'happy',
     description: (
       <>
-        <strong>월간계획안(PDF)</strong>만 올리면 <strong>주간보육일지</strong>까지 AI가 자동 완성.
+        <strong>월간계획안(PDF)</strong>만 올리면 <strong>주간보육일지</strong>까지 AI가
+        자동으로 완성해드려요!
       </>
     ),
   },
@@ -147,7 +163,8 @@ const TOUR_STEPS: TourStep[] = [
     mascot: 'point',
     description: (
       <>
-        아이 <strong>이름·나이·반</strong> 등록. 개인 알림장의 기준이 돼요.
+        아이 <strong>이름·나이·반</strong>을 등록해두세요. 개인 알림장과 아이별 폴더의 기준이
+        됩니다!
       </>
     ),
   },
@@ -157,7 +174,8 @@ const TOUR_STEPS: TourStep[] = [
     mascot: 'happy',
     description: (
       <>
-        <strong>문체 학습</strong>, 다크모드, 튜토리얼 다시보기 등.
+        <strong>문체 학습</strong>, 다크 모드, 튜토리얼 다시 보기까지 여기서 모두 관리할 수
+        있어요!
       </>
     ),
   },
