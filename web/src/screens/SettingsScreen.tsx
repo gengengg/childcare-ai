@@ -8,7 +8,7 @@ import { useToast } from '@/components/Toast';
 import { SettingsIcon, SparkleIcon, TrashIcon, UserIcon } from '@/components/icons';
 import { getChildren, type Child } from '@/lib/children';
 import { resetOnboarding } from '@/lib/onboarding';
-import { resetTour } from '@/lib/tour';
+import { hasTourUpdate, resetTour } from '@/lib/tour';
 import { useAuth } from '@/contexts/AuthContext';
 import { exitGuestMode, signOut, updatePassword } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -94,6 +94,7 @@ function GeneralTab() {
   const [theme, setTheme] = useState<ThemePref>('auto');
   const [classSetting, setClassSetting] = useState<ShowClassSetting>('auto');
   const [children, setChildren] = useState<Child[]>([]);
+  const [tourHasUpdate, setTourHasUpdate] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -102,6 +103,7 @@ function GeneralTab() {
       setTheme(await getThemePref());
       setClassSetting(await getShowClassSetting());
       setChildren(await getChildren());
+      setTourHasUpdate(await hasTourUpdate());
     })();
   }, []);
 
@@ -161,9 +163,24 @@ function GeneralTab() {
           첫 실행 안내와 튜토리얼을 언제든 다시 볼 수 있어요.
         </p>
         <div className="grid grid-cols-2 gap-2">
-          <button onClick={handleResetTour} className="btn-primary py-3">
-            튜토리얼 다시 보기
-          </button>
+          <div className="relative">
+            {tourHasUpdate && (
+              <div
+                className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap
+                  bg-clay-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-md
+                  animate-bounce"
+              >
+                업데이트를 했어요!
+                <span
+                  className="absolute left-1/2 -translate-x-1/2 top-full -mt-px w-0 h-0
+                    border-x-[5px] border-x-transparent border-t-[6px] border-t-clay-600"
+                />
+              </div>
+            )}
+            <button onClick={handleResetTour} className="btn-primary py-3 w-full">
+              튜토리얼 다시 보기
+            </button>
+          </div>
           <button onClick={handleResetOnboarding} className="btn-ghost py-3">
             온보딩 다시 보기
           </button>
