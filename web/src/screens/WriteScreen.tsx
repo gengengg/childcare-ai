@@ -722,7 +722,27 @@ export function WriteScreen() {
         </Card>
       )}
 
-      <Card className="mb-4" hint="오늘 무엇을 했나요?" data-tour="write-card">
+      <Card
+        className="mb-4"
+        data-tour="write-card"
+        hint={
+          mode === 'common' ? (
+            <div className="flex items-center justify-between gap-2">
+              <span>오늘 무엇을 했나요?</span>
+              <button
+                onClick={handleLoadClassActivities}
+                className="inline-flex items-center gap-1 rounded-pill bg-clay-500/10 text-clay-700
+                  border border-clay-500/30 px-3 py-1.5 text-[12px] font-bold
+                  active:bg-clay-500/20 transition"
+              >
+                <GridIcon size={13} /> 오늘 활동 내용 가져오기
+              </button>
+            </div>
+          ) : (
+            '오늘 무엇을 했나요?'
+          )
+        }
+      >
         {loadedFromClass && (
           <div className="rounded-xl bg-clay-500/10 border border-clay-500/30 px-3 py-2 mb-4 text-[13px] font-semibold text-clay-700 flex items-center gap-2">
             <CheckIcon size={14} /> 오늘 활동 내용을 불러왔어요.
@@ -769,21 +789,23 @@ export function WriteScreen() {
             </div>
           ))}
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className={mode === 'common' ? '' : 'grid grid-cols-2 gap-2'}>
             <button
               onClick={addActivity}
-              className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
+              className="w-full rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
                 hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
             >
               <PlusIcon size={18} /> 활동 추가
             </button>
-            <button
-              onClick={handleLoadClassActivities}
-              className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-700
-                hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
-            >
-              <GridIcon size={18} /> 오늘 활동 내용 가져오기
-            </button>
+            {mode !== 'common' && (
+              <button
+                onClick={handleLoadClassActivities}
+                className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-700
+                  hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
+              >
+                <GridIcon size={18} /> 오늘 활동 내용 가져오기
+              </button>
+            )}
           </div>
 
           <div>
