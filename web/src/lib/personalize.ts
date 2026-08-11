@@ -56,9 +56,12 @@ const ALWAYS_PROTECTED_SRC =
 // 단 앞이 "우리 (반) (의)?"이면 개인화 대상으로 남긴다 (callback 에서 판정).
 const PREFIXED_SRC = '[가-힣]+\\s+' + PLURAL;
 
-// 눈에 잘 안 띄는 사설 영역(PUA) 문자로 마스킹.
-const OPEN = '';
-const CLOSE = '';
+// 유니코드 non-character (﷐/﷑) 로 마스킹. 정상 텍스트에
+// 절대 등장하지 않아 원문의 숫자·문장부호와 충돌하지 않는다.
+// (과거에 빈 문자열로 저장되어 원문의 '1.' 같은 번호와 index 숫자가
+// 엉키던 버그가 있었음)
+const OPEN = '﷐';
+const CLOSE = '﷑';
 
 function isOurPrefix(before: string): boolean {
   return /(?:^|\s)우리(?:\s+반(?:\s+의|의)?)?\s+$/.test(before);
