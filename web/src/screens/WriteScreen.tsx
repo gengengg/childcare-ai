@@ -51,6 +51,7 @@ import {
 import { Walkthrough, type TourStep } from '@/components/Walkthrough';
 import { Mascot } from '@/components/Mascot';
 import { hasSeenTour, markTourSeen } from '@/lib/tour';
+import { personalizeText } from '@/lib/personalize';
 
 type WriteMode = 'personal' | 'common';
 
@@ -527,8 +528,8 @@ export function WriteScreen() {
             mealNote,
             napNote,
             healthNote,
-            aiDraft,
-            teacherFinal: finalText,
+            aiDraft: personalizeText(aiDraft, c.name),
+            teacherFinal: personalizeText(finalText, c.name),
           })
         )
       );
