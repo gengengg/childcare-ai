@@ -215,6 +215,16 @@ export function WeeklyDiaryScreen() {
   };
 
   const handleGenerateEvaluations = async () => {
+    const hasAnyActivity = visibleDays.some((d) => {
+      const s = days[d] ?? emptyDaySlots();
+      return (
+        s.morningFree.trim() || s.outdoor.trim() || s.special.trim()
+      );
+    });
+    if (!hasAnyActivity) {
+      toast.show('입력된 활동이 없어요.', 'error');
+      return;
+    }
     setGeneratingEval(true);
     try {
       const records = await collectRecordsForWeek(className, dates);
