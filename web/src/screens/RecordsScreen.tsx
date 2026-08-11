@@ -24,6 +24,7 @@ function formatDate(d: string) {
 }
 
 const COMMON_FILTER = '__common__';
+const ARCHIVE_FILTER = '__archive__';
 const isCommonRecord = (r: DailyRecord) => r.childId.startsWith('common-');
 
 export function RecordsScreen() {
@@ -32,6 +33,7 @@ export function RecordsScreen() {
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [filter, setFilter] = useState<string>('');
+  const [archivedChildId, setArchivedChildId] = useState<string>('');
   const [openId, setOpenId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -55,15 +57,15 @@ export function RecordsScreen() {
   }, []);
 
   const hasCommon = useMemo(() => records.some(isCommonRecord), [records]);
+  const registeredIds = useMemo(() => new Set(children.map((c) => c.id)), [children]);
 
+  // 등록된 아이 폴더. 최신 이름을 사용.
   const childOptions = useMemo(() => {
-    // 폴더 이름은 등록된 아이(children) 최신 이름을 우선 사용.
-    // 아이 이름이 수정되면 다음 방문 시 자동 반영.
-    // records 에만 존재하는 childId(등록되지 않은 이름) 는 record 의 childName 사용.
     const nameById = new Map(children.map((c) => [c.id, c.name]));
     const map = new Map<string, { childId: string; name: string; count: number }>();
     for (const r of records) {
       if (isCommonRecord(r)) continue;
+      if (!registeredIds.has(r.childId)) continue;
       const name = nameById.get(r.childId) ?? r.childName;
       if (!name) continue;
       const existing = map.get(r.childId);
@@ -75,13 +77,46 @@ export function RecordsScreen() {
       }
     }
     return Array.from(map.values());
-  }, [records, children]);
+  }, [records, children, registeredIds]);
+
+  // 보관 폴더: 등록 아이 목록에 더 이상 없는 (=삭제된) 아이의 알림장.
+  const archivedByChild = useMemo(() => {
+    const map = new Map<string, { childId: string; name: string; count: number }>();
+    for (const r of records) {
+      if (isCommonRecord(r)) continue;
+      if (registeredIds.has(r.childId)) continue;
+      const existing = map.get(r.childId);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(r.childId, {
+          childId: r.childId,
+          name: r.childName || '이름 없음',
+          count: 1,
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [records, registeredIds]);
+
+  const hasArchive = archivedByChild.length > 0;
+  const showArchiveFolders = filter === ARCHIVE_FILTER && !archivedChildId;
 
   const filtered = useMemo(() => {
     if (filter === '') return records;
     if (filter === COMMON_FILTER) return records.filter(isCommonRecord);
+    if (filter === ARCHIVE_FILTER) {
+      if (!archivedChildId) return [];
+      return records.filter((r) => r.childId === archivedChildId);
+    }
     return records.filter((r) => r.childId === filter);
-  }, [filter, records]);
+  }, [filter, archivedChildId, records]);
+
+  const selectFilter = (next: string) => {
+    setFilter(next);
+    setArchivedChildId('');
+    setOpenId(null);
+  };
 
   const groupedByDate = useMemo(() => {
     const map = new Map<string, DailyRecord[]>();
@@ -96,6 +131,7 @@ export function RecordsScreen() {
   const displayName = (r: DailyRecord): string => {
     if (isCommonRecord(r)) return r.childName || '공통 알림장';
     const registered = children.find((c) => c.id === r.childId);
+    // 등록 아이는 최신 이름, 삭제된 아이는 저장 당시 이름을 그대로 유지.
     return registered?.name || r.childName || '이름 없음';
   };
 
@@ -133,15 +169,15 @@ export function RecordsScreen() {
         }
       />
 
-      {(childOptions.length > 0 || hasCommon) && (
+      {(childOptions.length > 0 || hasCommon || hasArchive) && (
         <div className="flex flex-wrap gap-2 mb-4">
-          <Chip active={filter === ''} onClick={() => setFilter('')}>
+          <Chip active={filter === ''} onClick={() => selectFilter('')}>
             전체
           </Chip>
           {hasCommon && (
             <Chip
               active={filter === COMMON_FILTER}
-              onClick={() => setFilter(COMMON_FILTER)}
+              onClick={() => selectFilter(COMMON_FILTER)}
             >
               공통 알림장
             </Chip>
@@ -150,7 +186,7 @@ export function RecordsScreen() {
             <Chip
               key={c.childId}
               active={filter === c.childId}
-              onClick={() => setFilter(c.childId)}
+              onClick={() => selectFilter(c.childId)}
               className="inline-flex items-center gap-1"
               title={`${c.name} 폴더 (${c.count}개)`}
             >
@@ -158,7 +194,25 @@ export function RecordsScreen() {
               {c.name}
             </Chip>
           ))}
+          {hasArchive && (
+            <Chip
+              active={filter === ARCHIVE_FILTER}
+              onClick={() => selectFilter(ARCHIVE_FILTER)}
+              title="삭제된 아이의 알림장 보관함"
+            >
+              보관
+            </Chip>
+          )}
         </div>
+      )}
+
+      {filter === ARCHIVE_FILTER && archivedChildId && (
+        <button
+          onClick={() => setArchivedChildId('')}
+          className="text-[13px] font-semibold text-clay-700 mb-3 inline-flex items-center gap-1"
+        >
+          ← 보관 폴더 목록
+        </button>
       )}
 
       {loading ? (
@@ -167,6 +221,39 @@ export function RecordsScreen() {
           <SkeletonListItem />
           <SkeletonListItem />
         </Card>
+      ) : showArchiveFolders ? (
+        archivedByChild.length === 0 ? (
+          <Card>
+            <div className="flex flex-col items-center py-8">
+              <Mascot variant="sleep" size={80} className="mb-3" />
+              <p className="text-center text-subtle">보관된 알림장이 없어요.</p>
+            </div>
+          </Card>
+        ) : (
+          <Card>
+            <div className="text-[12px] text-subtle mb-3 px-1">
+              아이 목록에서 삭제된 알림장이에요.
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {archivedByChild.map((c) => (
+                <button
+                  key={c.childId}
+                  onClick={() => {
+                    setArchivedChildId(c.childId);
+                    setOpenId(null);
+                  }}
+                  className="flex flex-col items-center gap-2 py-5 rounded-2xl
+                    bg-cream-50 border border-cream-200 text-clay-700
+                    active:bg-cream-100 transition"
+                >
+                  <FolderIcon size={26} />
+                  <div className="text-[14px] font-bold text-ink">{c.name}</div>
+                  <div className="text-[11px] text-subtle">알림장 {c.count}개</div>
+                </button>
+              ))}
+            </div>
+          </Card>
+        )
       ) : groupedByDate.length === 0 ? (
         <Card>
           <div className="flex flex-col items-center py-8">
