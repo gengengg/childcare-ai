@@ -1440,7 +1440,10 @@ def generate_weekly_evaluations(request: GenerateWeeklyEvaluationsRequest):
 - 끼적이기 활동은 그림·사진 탐색 → 크레파스 등의 도구 선택 → 자유로운 끼적이기 → 관련 사물이나 경험에 대한 언어적 상호작용 순으로 작성.
 - 바깥놀이는 자연환경이나 놀이기구 탐색, 신체활동, 안전한 놀이를 위한 교사의 지원이 드러나도록 작성.
 - 마지막에는 활동을 통해 {child_word}가 경험한 내용을 자연스럽게 평가하며 마무리.
-- **분량은 각 요일 400자 내외 (약 380~430자).**
+- **⚠ 분량은 각 요일 반드시 380자 이상, 450자 이하로 작성 (한글 기준, 공백 포함).
+  짧으면 놀이의 확장, 교사의 상호작용, 영아의 반응·표현·발달 경험을 더 구체적으로
+  풀어 써서 반드시 채운다. 서술 작성 후 스스로 글자 수를 확인하고, 부족하면
+  문장을 추가한 뒤 응답한다. 250~350자짜리 짧은 서술은 절대 허용되지 않는다.**
 - 별도의 목표·준비물·활동방법 등은 작성하지 말고 '실행기록 및 평가' 내용만.
 - "참고 알림장"이 있으면 그 내용을 반영해 실제 있었던 관찰을 자연스럽게 서술.
 - 참고 알림장이 없으면 활동 이름과 계획된 주제만 기반으로 자연스러운 관찰문을 상상해 서술(구체 사실은 만들지 말고 활동 성격에 맞는 일반적 관찰로).
@@ -1480,7 +1483,7 @@ def generate_weekly_evaluations(request: GenerateWeeklyEvaluationsRequest):
             model=model_name,
             instructions=instructions,
             input=prompt,
-            max_output_tokens=3500,
+            max_output_tokens=5500,
         )
         raw = _extract_json(response.output_text)
         parsed = json.loads(raw)

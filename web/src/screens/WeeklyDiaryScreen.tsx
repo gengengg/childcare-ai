@@ -381,10 +381,17 @@ export function WeeklyDiaryScreen() {
           <button
             onClick={handleGenerateEvaluations}
             disabled={generatingEval}
-            className="col-span-2 py-2 rounded-xl bg-clay-500/10 text-clay-700 text-[12px] font-semibold hover:bg-clay-500/20 disabled:opacity-50 flex items-center justify-center gap-1"
+            className="py-2 rounded-xl bg-clay-500/10 text-clay-700 text-[12px] font-semibold hover:bg-clay-500/20 disabled:opacity-50 flex items-center justify-center gap-1"
           >
             <SparkleIcon size={12} />
             {generatingEval ? '생성 중…' : '총평 AI 자동 생성'}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="py-2 rounded-xl bg-clay-500 text-white text-[12px] font-bold hover:bg-clay-600 disabled:opacity-50 flex items-center justify-center gap-1"
+          >
+            {saving ? '저장 중…' : '주간일지 저장'}
           </button>
         </div>
         <div className="flex gap-1.5 overflow-x-auto">
@@ -494,18 +501,11 @@ export function WeeklyDiaryScreen() {
         </Card>
       </details>
 
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="btn-primary flex-1 py-4"
-        >
-          {saving ? '저장 중…' : '주간일지 저장'}
-        </button>
+      <div className="mb-6">
         <button
           onClick={handleExportDocx}
           disabled={exporting}
-          className="flex-1 py-4 rounded-2xl border border-clay-500/40 bg-surface text-clay-700 text-[14px] font-semibold hover:bg-clay-500/5 disabled:opacity-50"
+          className="w-full py-4 rounded-2xl border border-clay-500/40 bg-surface text-clay-700 text-[14px] font-semibold hover:bg-clay-500/5 disabled:opacity-50"
         >
           {exporting ? '생성 중…' : 'DOCX 다운로드'}
         </button>
