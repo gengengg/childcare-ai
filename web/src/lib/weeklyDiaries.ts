@@ -246,6 +246,77 @@ export function autoDistribute(
 }
 
 /**
+ * 그 주 날짜 범위에 저장된 알림장에서 활동명을 요일별로 수집(중복 제거).
+ * 반환: { 월: ["활동A", "활동B"], 화: [...], ... }
+ */
+export async function collectActivitiesForWeek(
+  className: string,
+  dates: Record<WeekDay, string>
+): Promise<Record<WeekDay, string[]>> {
+  const all = await getAllDailyRecords();
+  const dateToDay: Record<string, WeekDay> = {};
+  (Object.entries(dates) as [WeekDay, string][]).forEach(([day, date]) => {
+    dateToDay[date] = day;
+  });
+
+  const result = {} as Record<WeekDay, string[]>;
+  const seen: Record<WeekDay, Set<string>> = {} as any;
+  for (const day of WEEK_DAYS) {
+    result[day] = [];
+    seen[day] = new Set();
+  }
+
+  for (const r of all) {
+    const day = dateToDay[r.date];
+    if (!day) continue;
+    if (className && (r.className || '').trim() !== className) continue;
+    for (const a of r.activities || []) {
+      const title = (a.title || '').trim();
+      if (!title) continue;
+      if (seen[day].has(title)) continue;
+      seen[day].add(title);
+      result[day].push(title);
+    }
+  }
+  return result;
+}
+
+/**
+ * 요일별 활동명 리스트를 접두어 규칙(autoDistribute와 동일)에 따라
+ * morningFree / outdoor / special 슬롯으로 분류한 DaySlots를 반환.
+ */
+export function activitiesPerDayToSlots(
+  perDay: Record<WeekDay, string[]>
+): Record<WeekDay, DaySlots> {
+  const slots = {} as Record<WeekDay, DaySlots>;
+  for (const day of WEEK_DAYS) {
+    const outdoor: string[] = [];
+    const special: string[] = [];
+    const morning: string[] = [];
+    for (const raw of perDay[day] || []) {
+      const a = raw.trim();
+      if (!a) continue;
+      const lower = a.replace(/\s+/g, '');
+      if (/^\(바깥놀이\)|^\(실외놀이\)|^\(실내대체\)/.test(a)) {
+        outdoor.push(a);
+      } else if (
+        /^\(특별활동\)|^\(오감놀이\)|^\(영어\)|^\(체육\)|오감놀이|체육수업|영어수업/.test(lower)
+      ) {
+        special.push(a);
+      } else {
+        morning.push(a);
+      }
+    }
+    slots[day] = {
+      morningFree: morning.join('\n'),
+      outdoor: outdoor.join('\n'),
+      special: special.join('\n'),
+    };
+  }
+  return slots;
+}
+
+/**
  * 아이 이름을 [영아]로 마스킹. 개인 알림장 본문을 반 총평 참고용으로 쓸 때.
  * childName이 여러 번 등장할 수 있고, 조사도 붙을 수 있어 단순 replace로 처리.
  */
@@ -352,6 +423,7 @@ export async function generateWeeklyEvaluations(input: {
   year: number;
   month: number;
   weekNumber: number;
+  ageGroup: string;
   theme: string;
   subtheme: string;
   styleGuide: string;
@@ -365,6 +437,7 @@ export async function generateWeeklyEvaluations(input: {
     year: input.year,
     month: input.month,
     week_number: input.weekNumber,
+    age_group: input.ageGroup,
     theme: input.theme,
     subtheme: input.subtheme,
     style_guide: input.styleGuide,

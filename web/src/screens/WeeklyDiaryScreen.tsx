@@ -8,7 +8,9 @@ import { getMonthlyPlan, weekOfMonth, type MonthlyPlan } from '@/lib/monthlyPlan
 import {
   WEEK_DAYS,
   WEEKDAYS_MON_TO_FRI,
+  activitiesPerDayToSlots,
   autoDistribute,
+  collectActivitiesForWeek,
   collectRecordsForWeek,
   datesForWeek,
   daySlotsHasContent,
@@ -78,6 +80,7 @@ export function WeeklyDiaryScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [distributing, setDistributing] = useState(false);
+  const [loadingFromRecords, setLoadingFromRecords] = useState(false);
   const [generatingEval, setGeneratingEval] = useState(false);
   const [exporting, setExporting] = useState(false);
   // 토요일은 기본 숨김. 기존 데이터에 토가 있으면 자동으로 켬. 사용자가 토글로 켤 수도 있음.
@@ -178,6 +181,39 @@ export function WeeklyDiaryScreen() {
     }
   };
 
+  const handleLoadFromRecords = async () => {
+    setLoadingFromRecords(true);
+    try {
+      const perDay = await collectActivitiesForWeek(className, dates);
+      const total = visibleDays.reduce((n, d) => n + (perDay[d]?.length ?? 0), 0);
+      if (total === 0) {
+        toast.show('이 주에 저장된 알림장 활동이 없어요.', 'error');
+        return;
+      }
+      const fromRecords = activitiesPerDayToSlots(perDay);
+      // 알림장 활동을 우선 반영: 알림장에 있는 활동은 기존 값을 덮어씀.
+      // 알림장에 해당 슬롯 활동이 없으면 기존 값 유지.
+      setDays((prev) => {
+        const next = { ...prev };
+        for (const d of visibleDays) {
+          const existing = prev[d] ?? emptyDaySlots();
+          const rec = fromRecords[d] ?? emptyDaySlots();
+          next[d] = {
+            morningFree: rec.morningFree || existing.morningFree,
+            outdoor: rec.outdoor || existing.outdoor,
+            special: rec.special || existing.special,
+          };
+        }
+        return next;
+      });
+      toast.show(`알림장에서 활동 ${total}개를 불러왔어요.`, 'success');
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : '알림장 불러오기 실패', 'error');
+    } finally {
+      setLoadingFromRecords(false);
+    }
+  };
+
   const handleGenerateEvaluations = async () => {
     setGeneratingEval(true);
     try {
@@ -188,6 +224,7 @@ export function WeeklyDiaryScreen() {
         year,
         month,
         weekNumber,
+        ageGroup,
         theme,
         subtheme,
         styleGuide,
@@ -322,19 +359,27 @@ export function WeeklyDiaryScreen() {
         />
       </Card>
 
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 grid grid-cols-2 gap-2">
         <button
           onClick={handleAutoDistribute}
           disabled={distributing}
-          className="flex-1 py-3 rounded-2xl bg-cream-100 text-ink text-[13px] font-semibold hover:bg-cream-200 disabled:opacity-50 flex items-center justify-center gap-1.5"
+          className="py-3 rounded-2xl bg-cream-100 text-ink text-[13px] font-semibold hover:bg-cream-200 disabled:opacity-50 flex items-center justify-center gap-1.5"
         >
           <SparkleIcon size={14} />
           {distributing ? '배분 중…' : '월간계획안 자동 배분'}
         </button>
         <button
+          onClick={handleLoadFromRecords}
+          disabled={loadingFromRecords}
+          className="py-3 rounded-2xl bg-cream-100 text-ink text-[13px] font-semibold hover:bg-cream-200 disabled:opacity-50 flex items-center justify-center gap-1.5"
+        >
+          <SparkleIcon size={14} />
+          {loadingFromRecords ? '불러오는 중…' : '알림장에서 활동 불러오기'}
+        </button>
+        <button
           onClick={handleGenerateEvaluations}
           disabled={generatingEval}
-          className="flex-1 py-3 rounded-2xl bg-clay-500/10 text-clay-700 text-[13px] font-semibold hover:bg-clay-500/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
+          className="col-span-2 py-3 rounded-2xl bg-clay-500/10 text-clay-700 text-[13px] font-semibold hover:bg-clay-500/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
         >
           <SparkleIcon size={14} />
           {generatingEval ? '생성 중…' : '총평 AI 자동 생성'}
