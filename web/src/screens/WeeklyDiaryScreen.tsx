@@ -359,35 +359,34 @@ export function WeeklyDiaryScreen() {
         />
       </Card>
 
-      <div className="mb-4 grid grid-cols-2 gap-2">
-        <button
-          onClick={handleAutoDistribute}
-          disabled={distributing}
-          className="py-3 rounded-2xl bg-cream-100 text-ink text-[13px] font-semibold hover:bg-cream-200 disabled:opacity-50 flex items-center justify-center gap-1.5"
-        >
-          <SparkleIcon size={14} />
-          {distributing ? '배분 중…' : '월간계획안 자동 배분'}
-        </button>
-        <button
-          onClick={handleLoadFromRecords}
-          disabled={loadingFromRecords}
-          className="py-3 rounded-2xl bg-cream-100 text-ink text-[13px] font-semibold hover:bg-cream-200 disabled:opacity-50 flex items-center justify-center gap-1.5"
-        >
-          <SparkleIcon size={14} />
-          {loadingFromRecords ? '불러오는 중…' : '알림장에서 활동 불러오기'}
-        </button>
-        <button
-          onClick={handleGenerateEvaluations}
-          disabled={generatingEval}
-          className="col-span-2 py-3 rounded-2xl bg-clay-500/10 text-clay-700 text-[13px] font-semibold hover:bg-clay-500/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
-        >
-          <SparkleIcon size={14} />
-          {generatingEval ? '생성 중…' : '총평 AI 자동 생성'}
-        </button>
-      </div>
-
-      {/* 요일 바로가기 — 스크롤 시 상단 고정 */}
-      <div className="sticky top-0 z-30 -mx-5 px-5 py-2 mb-3 bg-cream-50/95 backdrop-blur border-b border-cream-200">
+      {/* 액션 3종 + 요일 바로가기 — 스크롤 시 상단 고정 */}
+      <div className="sticky top-0 z-30 -mx-5 px-5 pt-3 pb-2 mb-3 bg-cream-50/95 backdrop-blur border-b border-cream-200">
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <button
+            onClick={handleAutoDistribute}
+            disabled={distributing}
+            className="py-2 rounded-xl bg-cream-100 text-ink text-[12px] font-semibold hover:bg-cream-200 disabled:opacity-50 flex items-center justify-center gap-1"
+          >
+            <SparkleIcon size={12} />
+            {distributing ? '배분 중…' : '월간계획안 자동 배분'}
+          </button>
+          <button
+            onClick={handleLoadFromRecords}
+            disabled={loadingFromRecords}
+            className="py-2 rounded-xl bg-cream-100 text-ink text-[12px] font-semibold hover:bg-cream-200 disabled:opacity-50 flex items-center justify-center gap-1"
+          >
+            <SparkleIcon size={12} />
+            {loadingFromRecords ? '불러오는 중…' : '알림장에서 활동 불러오기'}
+          </button>
+          <button
+            onClick={handleGenerateEvaluations}
+            disabled={generatingEval}
+            className="col-span-2 py-2 rounded-xl bg-clay-500/10 text-clay-700 text-[12px] font-semibold hover:bg-clay-500/20 disabled:opacity-50 flex items-center justify-center gap-1"
+          >
+            <SparkleIcon size={12} />
+            {generatingEval ? '생성 중…' : '총평 AI 자동 생성'}
+          </button>
+        </div>
         <div className="flex gap-1.5 overflow-x-auto">
           {visibleDays.map((day) => (
             <button
@@ -409,7 +408,7 @@ export function WeeklyDiaryScreen() {
         const date = dates[day];
         const slots = days[day] ?? emptyDaySlots();
         return (
-          <div key={day} id={`day-${day}`} className="scroll-mt-16">
+          <div key={day} id={`day-${day}`} className="scroll-mt-40">
           <Card className="mb-4" hint={`${day}요일 · ${date}`}>
             <div className="space-y-3">
               <div>
