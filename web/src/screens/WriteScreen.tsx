@@ -167,7 +167,7 @@ export function WriteScreen() {
   const toast = useToast();
   const draftRef = useRef<HTMLDivElement | null>(null);
 
-  const [mode, setMode] = useState<WriteMode>('personal');
+  const [mode, setMode] = useState<WriteMode>('common');
 
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
@@ -200,6 +200,7 @@ export function WriteScreen() {
   const [aiDraft, setAiDraft] = useState('');
   const [teacherFinal, setTeacherFinal] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
   const [loadedFromClass, setLoadedFromClass] = useState(false);
   const [showClass, setShowClass] = useState(false);
@@ -486,6 +487,59 @@ export function WriteScreen() {
     }
   };
 
+  /**
+   * 공통 알림장을 반의 아이 각각에게 개인 알림장으로 복제 저장.
+   * - 대상: commonClassName 이 있으면 해당 반 아이, 없으면 등록된 전체 아이
+   * - 텍스트/활동/일상 메모는 그대로, childId·childName·className 만 아이별로 교체
+   * - 같은 (아이,날짜) 알림장이 이미 있으면 upsert 로 덮어씀
+   */
+  const handleApplyToEachChild = async () => {
+    const finalText = teacherFinal.trim() || aiDraft.trim();
+    if (!finalText) {
+      toast.show('먼저 AI 초안을 만들어 주세요.', 'error');
+      return;
+    }
+    const cn = commonClassName.trim();
+    const targets = cn
+      ? children.filter((c) => c.className === cn)
+      : children;
+    if (targets.length === 0) {
+      toast.show(
+        cn ? `"${cn}" 반에 등록된 아이가 없어요.` : '먼저 아이를 등록해 주세요.',
+        'error'
+      );
+      return;
+    }
+    const ok = window.confirm(
+      `${targets.length}명의 아이별 알림장으로 저장할까요?\n(같은 날짜 알림장이 있으면 덮어씁니다)`
+    );
+    if (!ok) return;
+    try {
+      setIsApplying(true);
+      await Promise.all(
+        targets.map((c) =>
+          saveDailyRecord({
+            childId: c.id,
+            childName: c.name,
+            className: c.className,
+            date: selectedDate,
+            activities,
+            mealNote,
+            napNote,
+            healthNote,
+            aiDraft,
+            teacherFinal: finalText,
+          })
+        )
+      );
+      toast.show(`${targets.length}명에게 저장했어요.`, 'success');
+    } catch {
+      toast.show('아이별 저장 중 오류가 났어요.', 'error');
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
   const handleCopy = async () => {
     const text = teacherFinal.trim() || aiDraft.trim();
     if (!text) return;
@@ -546,8 +600,8 @@ export function WriteScreen() {
             setSaveState('idle');
           }}
           options={[
-            { value: 'personal', label: '개인 알림장' },
             { value: 'common', label: '공통 알림장' },
+            { value: 'personal', label: '개인 알림장' },
           ]}
         />
       </div>
@@ -827,6 +881,24 @@ export function WriteScreen() {
                 )}
               </button>
             </div>
+            {mode === 'common' && children.length > 0 && (
+              <button
+                onClick={handleApplyToEachChild}
+                disabled={isApplying}
+                className="btn-outline w-full mt-2 py-3"
+              >
+                <UsersIcon size={16} />
+                {isApplying
+                  ? '아이별로 저장 중…'
+                  : (() => {
+                      const cn = commonClassName.trim();
+                      const count = cn
+                        ? children.filter((c) => c.className === cn).length
+                        : children.length;
+                      return `아이 별로 적용하기${count > 0 ? ` (${count}명)` : ''}`;
+                    })()}
+              </button>
+            )}
           </Card>
         </div>
       )}
