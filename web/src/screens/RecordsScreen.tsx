@@ -22,11 +22,14 @@ function formatDate(d: string) {
   return `${m}월 ${day}일 (${week})`;
 }
 
+const COMMON_FILTER = '__common__';
+const isCommonRecord = (r: DailyRecord) => r.childId.startsWith('common-');
+
 export function RecordsScreen() {
   const navigate = useNavigate();
   const toast = useToast();
   const [records, setRecords] = useState<DailyRecord[]>([]);
-  const [filterChild, setFilterChild] = useState<string>('');
+  const [filter, setFilter] = useState<string>('');
   const [openId, setOpenId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,21 +51,30 @@ export function RecordsScreen() {
     load();
   }, []);
 
+  const hasCommon = useMemo(() => records.some(isCommonRecord), [records]);
+
   const childOptions = useMemo(() => {
     const seen = new Set<string>();
-    const list: { childId: string; name: string }[] = [];
+    const list: { childId: string; name: string; count: number }[] = [];
     for (const r of records) {
-      if (r.childName && !seen.has(r.childId)) {
-        seen.add(r.childId);
-        list.push({ childId: r.childId, name: r.childName });
+      if (isCommonRecord(r)) continue;
+      if (!r.childName) continue;
+      if (seen.has(r.childId)) {
+        const item = list.find((x) => x.childId === r.childId);
+        if (item) item.count += 1;
+        continue;
       }
+      seen.add(r.childId);
+      list.push({ childId: r.childId, name: r.childName, count: 1 });
     }
     return list;
   }, [records]);
 
-  const filtered = filterChild
-    ? records.filter((r) => r.childId === filterChild)
-    : records;
+  const filtered = useMemo(() => {
+    if (filter === '') return records;
+    if (filter === COMMON_FILTER) return records.filter(isCommonRecord);
+    return records.filter((r) => r.childId === filter);
+  }, [filter, records]);
 
   const groupedByDate = useMemo(() => {
     const map = new Map<string, DailyRecord[]>();
@@ -108,17 +120,28 @@ export function RecordsScreen() {
         }
       />
 
-      {childOptions.length > 0 && (
+      {(childOptions.length > 0 || hasCommon) && (
         <div className="flex flex-wrap gap-2 mb-4">
-          <Chip active={filterChild === ''} onClick={() => setFilterChild('')}>
+          <Chip active={filter === ''} onClick={() => setFilter('')}>
             전체
           </Chip>
+          {hasCommon && (
+            <Chip
+              active={filter === COMMON_FILTER}
+              onClick={() => setFilter(COMMON_FILTER)}
+            >
+              공통 알림장
+            </Chip>
+          )}
           {childOptions.map((c) => (
             <Chip
               key={c.childId}
-              active={filterChild === c.childId}
-              onClick={() => setFilterChild(c.childId)}
+              active={filter === c.childId}
+              onClick={() => setFilter(c.childId)}
+              className="inline-flex items-center gap-1"
+              title={`${c.name} 폴더 (${c.count}개)`}
             >
+              <FolderIcon size={14} />
               {c.name}
             </Chip>
           ))}
