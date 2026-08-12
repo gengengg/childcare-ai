@@ -8,6 +8,7 @@ const STYLE_SAMPLES_KEY = 'style_samples_v1';
 const EMOJI_ENABLED_KEY = 'style_emoji_enabled_v1';
 const TONE_KEY = 'style_tone_v1';
 const LENGTH_KEY = 'style_length_v1';
+const AREA_LABELS_ENABLED_KEY = 'style_area_labels_enabled_v1';
 
 export const MAX_STYLE_SAMPLES = 5;
 
@@ -17,7 +18,7 @@ export type StyleSample =
   | { id: string; kind: 'text'; text: string }
   | { id: string; kind: 'image'; uri: string; base64: string };
 
-export type ToneOption = 'warm' | 'friendly' | 'concise';
+export type ToneOption = 'professional' | 'friendly' | 'concise';
 export type LengthOption = 'short' | 'medium' | 'long';
 
 type Row = {
@@ -27,6 +28,7 @@ type Row = {
   emoji_enabled: boolean;
   tone: ToneOption;
   length: LengthOption;
+  area_labels_enabled: boolean;
 };
 
 export function makeId(): string {
@@ -36,7 +38,7 @@ export function makeId(): string {
 async function fetchRow(userId: string): Promise<Row | null> {
   const { data, error } = await supabase
     .from('style_settings')
-    .select('style_mode, style_guide, style_samples, emoji_enabled, tone, length')
+    .select('style_mode, style_guide, style_samples, emoji_enabled, tone, length, area_labels_enabled')
     .eq('user_id', userId)
     .maybeSingle();
   if (error) {
@@ -107,10 +109,23 @@ export async function getTone(): Promise<ToneOption> {
   const userId = await getSupabaseUserId();
   if (userId) {
     const r = await fetchRow(userId);
-    return r?.tone ?? 'warm';
+    // 과거 'warm' 저장분은 'professional' 로 이행
+    const t = r?.tone as string | undefined;
+    if (t === 'friendly' || t === 'concise') return t;
+    return 'professional';
   }
   const v = await getItem(TONE_KEY);
-  return v === 'friendly' || v === 'concise' ? v : 'warm';
+  return v === 'friendly' || v === 'concise' ? v : 'professional';
+}
+
+export async function getAreaLabelsEnabled(): Promise<boolean> {
+  const userId = await getSupabaseUserId();
+  if (userId) {
+    const r = await fetchRow(userId);
+    return r?.area_labels_enabled ?? false;
+  }
+  const v = await getItem(AREA_LABELS_ENABLED_KEY);
+  return v === '1';
 }
 
 export async function getLength(): Promise<LengthOption> {
@@ -161,6 +176,12 @@ export async function setLength(length: LengthOption): Promise<void> {
   await setItem(LENGTH_KEY, length);
 }
 
+export async function setAreaLabelsEnabled(enabled: boolean): Promise<void> {
+  const userId = await getSupabaseUserId();
+  if (userId) return upsertRow(userId, { area_labels_enabled: enabled });
+  await setItem(AREA_LABELS_ENABLED_KEY, enabled ? '1' : '0');
+}
+
 export async function clearStyleData(): Promise<void> {
   const userId = await getSupabaseUserId();
   if (userId) {
@@ -188,8 +209,8 @@ export async function getActiveStyleGuide(): Promise<string> {
  */
 export function toneDirective(tone: ToneOption): string {
   switch (tone) {
-    case 'warm':
-      return '따뜻하고 정감 있는 어조로, 아이의 감정과 순간을 다정하게 담아 주세요.';
+    case 'professional':
+      return '보육 교사의 전문적인 어조로, 아이의 참여 태도·상호작용·발달 관찰 포인트를 객관적이고 정돈된 문장으로 서술해 주세요. 감탄사·이모지는 피하고 관찰 기록에 가깝게 써 주세요.';
     case 'friendly':
       return '다정하고 친근한 어조로, 학부모와 대화하듯 편안하게 써 주세요.';
     case 'concise':

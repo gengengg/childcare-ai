@@ -25,6 +25,7 @@ import {
 import { cloneActivitiesWithNewIds, getClassActivity } from '@/lib/classActivities';
 import {
   getActiveStyleGuide,
+  getAreaLabelsEnabled,
   getEmojiEnabled,
   getLength,
   getTone,
@@ -37,7 +38,7 @@ import { generateDailyRecordWithAI } from '@/lib/ai';
 import { dataUrlToBase64, resizeToDataUrl } from '@/lib/image';
 
 const TONES: { value: ToneOption; label: string }[] = [
-  { value: 'warm', label: '따뜻하게' },
+  { value: 'professional', label: '전문적으로' },
   { value: 'friendly', label: '다정하게' },
   { value: 'concise', label: '간결하게' },
 ];
@@ -66,7 +67,7 @@ export function RecordEditorScreen() {
   const [photos, setPhotos] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [tone, setTone] = useState<ToneOption>('warm');
+  const [tone, setTone] = useState<ToneOption>('professional');
   const [length, setLength] = useState<LengthOption>('medium');
 
   const [aiDraft, setAiDraft] = useState('');
@@ -141,9 +142,10 @@ export function RecordEditorScreen() {
     }
     try {
       setIsGenerating(true);
-      const [customGuide, emojiEnabled] = await Promise.all([
+      const [customGuide, emojiEnabled, areaLabelsEnabled] = await Promise.all([
         getActiveStyleGuide(),
         getEmojiEnabled(),
+        getAreaLabelsEnabled(),
       ]);
       const composedGuide = [toneDirective(tone), lengthDirective(length), customGuide]
         .filter(Boolean)
@@ -163,6 +165,7 @@ export function RecordEditorScreen() {
         images: photos.map(dataUrlToBase64),
         styleGuide: composedGuide,
         emojiEnabled,
+        areaLabelsEnabled,
       });
       setAiDraft(result.draft);
       setTeacherFinal(result.draft);

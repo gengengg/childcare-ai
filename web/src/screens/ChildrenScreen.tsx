@@ -91,10 +91,13 @@ export function ChildrenScreen() {
         <div className="space-y-3">
           <input
             className="field-input"
-            placeholder="이름"
+            placeholder="예: 홍길동 (길동 ✗)"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+          <p className="text-[11px] text-subtle -mt-1 pl-1">
+            성을 포함한 전체 이름을 적어주세요. 알림장엔 이름만 자동으로 들어가요.
+          </p>
           {showClass && (
             <input
               className="field-input"

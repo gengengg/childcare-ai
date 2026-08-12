@@ -36,7 +36,7 @@ export function CalendarScreen() {
         back
         icon={<CalendarIcon />}
         title="달력"
-        subtitle="날짜를 눌러 알림장을 확인해요"
+        subtitle="날짜를 눌러 알림장을 확인·수정해요"
       />
 
       <Card className="mb-4">
@@ -68,7 +68,7 @@ export function CalendarScreen() {
                       {r.className || ' '} · {(r.teacherFinal || r.aiDraft).slice(0, 30)}
                     </div>
                   </div>
-                  <span className="text-[12px] text-subtle">보기</span>
+                  <span className="text-[12px] font-bold text-clay-600">편집</span>
                 </button>
               </li>
             ))}

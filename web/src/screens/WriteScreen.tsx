@@ -31,6 +31,7 @@ import {
 import { cloneActivitiesWithNewIds, getClassActivity } from '@/lib/classActivities';
 import {
   getActiveStyleGuide,
+  getAreaLabelsEnabled,
   getEmojiEnabled,
   getLength,
   getTone,
@@ -51,12 +52,19 @@ import {
 import { Walkthrough, type TourStep } from '@/components/Walkthrough';
 import { Mascot } from '@/components/Mascot';
 import { hasSeenTour, markTourSeen } from '@/lib/tour';
-import { personalizeText } from '@/lib/personalize';
+import { getGivenName, personalizeText } from '@/lib/personalize';
 
 type WriteMode = 'personal' | 'common';
 
+function formatTodayKorean(dateKey: string): string {
+  const dt = new Date(dateKey + 'T00:00:00');
+  if (isNaN(dt.getTime())) return dateKey;
+  const week = ['일', '월', '화', '수', '목', '금', '토'][dt.getDay()];
+  return `${dt.getMonth() + 1}월 ${dt.getDate()}일 (${week})`;
+}
+
 const TONES: { value: ToneOption; label: string }[] = [
-  { value: 'warm', label: '따뜻하게' },
+  { value: 'professional', label: '전문적으로' },
   { value: 'friendly', label: '다정하게' },
   { value: 'concise', label: '간결하게' },
 ];
@@ -213,7 +221,7 @@ export function WriteScreen() {
   const [photos, setPhotos] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [tone, setTone] = useState<ToneOption>('warm');
+  const [tone, setTone] = useState<ToneOption>('professional');
   const [length, setLength] = useState<LengthOption>('medium');
 
   const [aiDraft, setAiDraft] = useState('');
@@ -419,9 +427,10 @@ export function WriteScreen() {
     }
     try {
       setIsGenerating(true);
-      const [customGuide, emojiEnabled] = await Promise.all([
+      const [customGuide, emojiEnabled, areaLabelsEnabled] = await Promise.all([
         getActiveStyleGuide(),
         getEmojiEnabled(),
+        getAreaLabelsEnabled(),
       ]);
       const parts = [toneDirective(tone), lengthDirective(length), customGuide];
       if (mode === 'common') parts.unshift(COMMON_DIRECTIVE);
@@ -429,7 +438,7 @@ export function WriteScreen() {
 
       const nameForAi =
         mode === 'personal'
-          ? targetName
+          ? getGivenName(targetName)
           : '우리 반 친구들';
       const classForAi =
         mode === 'personal'
@@ -451,6 +460,7 @@ export function WriteScreen() {
         images: photos.map(dataUrlToBase64),
         styleGuide: composedGuide,
         emojiEnabled,
+        areaLabelsEnabled,
       });
 
       setAiDraft(result.draft);
@@ -512,7 +522,12 @@ export function WriteScreen() {
       aiDraft: draftText,
       teacherFinal: finalText,
     });
-    await Promise.all([saveTone(tone), saveLength(length)]);
+    // 톤/길이는 사용자 취향 프리퍼런스 — 저장 실패해도 알림장 저장 성공 흐름을 막지 않는다.
+    try {
+      await Promise.all([saveTone(tone), saveLength(length)]);
+    } catch (e) {
+      console.warn('[persistRecord.saveTonePref]', e);
+    }
     return true;
   };
 
@@ -632,6 +647,12 @@ export function WriteScreen() {
         }
       />
 
+      {/* 오늘 날짜 배지 */}
+      <div className="mb-4 flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-clay-500 text-white text-[14px] font-bold shadow-pop">
+        <CalendarIcon size={16} />
+        <span>오늘 · {formatTodayKorean(selectedDate)} 알림장</span>
+      </div>
+
       {/* 빠른 이동 */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         <Shortcut
@@ -672,7 +693,7 @@ export function WriteScreen() {
         <Card className="mb-4" hint="누구의 알림장인가요?">
           <input
             className="field-input mb-3"
-            placeholder="아이 이름"
+            placeholder="예: 홍길동 (길동 ✗)"
             value={child ? child.name : manualName}
             onChange={(e) => {
               if (child) return;

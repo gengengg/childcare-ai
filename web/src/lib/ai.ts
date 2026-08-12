@@ -24,6 +24,7 @@ export type GenerateDailyRecordInput = {
   images?: string[]; // base64 (data URL prefix 제거된 순수 base64)
   styleGuide?: string;
   emojiEnabled?: boolean;
+  areaLabelsEnabled?: boolean;
 };
 
 export type DailyRecordResult = {
@@ -53,6 +54,7 @@ export async function generateDailyRecordWithAI(
       images: input.images ?? [],
       style_guide: input.styleGuide ?? '',
       emoji_enabled: input.emojiEnabled ?? true,
+      area_labels_enabled: input.areaLabelsEnabled ?? false,
     }),
   });
 

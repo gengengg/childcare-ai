@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
-  HomeIcon,
+  PencilIcon,
   FolderIcon,
   NoteIcon,
   UsersIcon,
@@ -9,9 +9,9 @@ import {
 } from '@/components/icons';
 
 const tabs = [
-  { to: '/', label: '홈', Icon: HomeIcon, end: true, tourKey: 'tab-home' },
   { to: '/records', label: '보관함', Icon: FolderIcon, tourKey: 'tab-records' },
   { to: '/weekly', label: '학급', Icon: NoteIcon, tourKey: 'tab-weekly' },
+  { to: '/', label: '작성', Icon: PencilIcon, end: true, tourKey: 'tab-write' },
   { to: '/children', label: '아이', Icon: UsersIcon, tourKey: 'tab-children' },
   { to: '/settings', label: '설정', Icon: SettingsIcon, tourKey: 'tab-settings' },
 ];

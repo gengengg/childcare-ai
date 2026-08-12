@@ -19,9 +19,11 @@ import {
   type ShowClassSetting,
 } from '@/lib/settings';
 import {
+  getAreaLabelsEnabled,
   getEmojiEnabled,
   getLength,
   getTone,
+  setAreaLabelsEnabled,
   setEmojiEnabled,
   setLength,
   setTone,
@@ -52,7 +54,7 @@ const CLASS_OPTIONS: { value: ShowClassSetting; label: string }[] = [
 ];
 
 const TONES: { value: ToneOption; label: string }[] = [
-  { value: 'warm', label: '따뜻하게' },
+  { value: 'professional', label: '전문적으로' },
   { value: 'friendly', label: '다정하게' },
   { value: 'concise', label: '간결하게' },
 ];
@@ -192,12 +194,14 @@ function GeneralTab() {
 
 function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
   const [emojiOn, setEmojiOn] = useState(true);
-  const [tone, setToneState] = useState<ToneOption>('warm');
+  const [areaLabelsOn, setAreaLabelsOn] = useState(false);
+  const [tone, setToneState] = useState<ToneOption>('professional');
   const [length, setLengthState] = useState<LengthOption>('medium');
 
   useEffect(() => {
     (async () => {
       setEmojiOn(await getEmojiEnabled());
+      setAreaLabelsOn(await getAreaLabelsEnabled());
       setToneState(await getTone());
       setLengthState(await getLength());
     })();
@@ -207,6 +211,11 @@ function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
     const next = !emojiOn;
     setEmojiOn(next);
     await setEmojiEnabled(next);
+  };
+  const toggleAreaLabels = async () => {
+    const next = !areaLabelsOn;
+    setAreaLabelsOn(next);
+    await setAreaLabelsEnabled(next);
   };
   const handleTone = async (v: ToneOption) => {
     setToneState(v);
@@ -242,6 +251,36 @@ function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
               className={
                 'absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition ' +
                 (emojiOn ? 'left-[22px]' : 'left-0.5')
+              }
+            />
+          </button>
+        </div>
+      </Card>
+
+      <Card className="mb-4" hint="영역명 태그">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[14px] text-clay-800 font-semibold">
+              소제목 앞에 [영역명] 붙이기
+            </p>
+            <p className="text-[12px] text-subtle mt-1">
+              켜면 "1. [사회관계] 블록놀이" 처럼 표준 5영역 태그가 붙어요.
+              끄면 "1. 블록놀이" 처럼 자연스러운 문장으로만 나와요.
+            </p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={areaLabelsOn}
+            onClick={toggleAreaLabels}
+            className={
+              'shrink-0 w-12 h-7 rounded-full transition relative ' +
+              (areaLabelsOn ? 'bg-clay-500' : 'bg-cream-300')
+            }
+          >
+            <span
+              className={
+                'absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition ' +
+                (areaLabelsOn ? 'left-[22px]' : 'left-0.5')
               }
             />
           </button>

@@ -57,6 +57,8 @@ class DailyRecordRequest(BaseModel):
     images: Optional[List[str]] = []
     style_guide: Optional[str] = ""
     emoji_enabled: Optional[bool] = True
+    # 소제목 앞의 [영역명] 태그 노출 여부. 기본은 꺼짐(자연스러운 문장 위주).
+    area_labels_enabled: Optional[bool] = False
 
 
 class StyleSampleItem(BaseModel):
@@ -166,10 +168,13 @@ def call_openai_with_images(prompt: str, instructions: str, images: List[str], m
 
 def make_fallback_daily_record(request: DailyRecordRequest) -> str:
     lines = []
+    area_labels_on = bool(request.area_labels_enabled)
     for i, act in enumerate(request.activities, 1):
+        cat = (act.category or "").strip()
+        prefix = f"[{cat}] " if (area_labels_on and cat) else ""
         lines.append(
-            f"{i}. [{act.category}] 활동명: {act.title}\n"
-            f"학부모님, 오늘은 {act.title} 활동으로 즐거운 시간을 보냈습니다. "
+            f"{i}. {prefix}{act.title}\n"
+            f"오늘은 {act.title} 활동으로 즐거운 시간을 보냈습니다. "
             f"{request.child_name}이(가) 열심히 참여하는 모습이 무척 대견했습니다."
         )
 
@@ -306,6 +311,7 @@ def generate_daily_record(request: DailyRecordRequest):
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
 
     has_images = bool(request.images)
+    area_labels_on = bool(request.area_labels_enabled)
 
     # 허용 영역 목록 (표준 보육과정 5영역, 프론트 ACTIVITY_CATEGORIES와 동일)
     VALID_AREAS = {'신체운동·건강', '의사소통', '사회관계', '예술경험', '자연탐구'}
@@ -313,16 +319,19 @@ def generate_daily_record(request: DailyRecordRequest):
     activities_text = ""
     for i, act in enumerate(request.activities, 1):
         memo = act.memo.strip() if act.memo else "없음"
-        cat = act.category.strip() if act.category else ""
-        if cat in VALID_AREAS:
-            area_line = f"출력 영역(고정): [{cat}]  ← 이 값을 그대로 사용"
+        if area_labels_on:
+            cat = act.category.strip() if act.category else ""
+            if cat in VALID_AREAS:
+                area_line = f"출력 영역(고정): [{cat}]  ← 이 값을 그대로 사용\n  "
+            else:
+                area_line = (
+                    "출력 영역(AI 선택 필요): 아래 표준 보육과정 5영역 중 활동명에 맞는 것을 반드시 하나 선택\n"
+                    "  → 신체운동·건강 / 의사소통 / 사회관계 / 예술경험 / 자연탐구\n"
+                    "  → 이 목록 외의 어떤 표현도 사용 불가 ([기본생활] [언어·의사소통] [창의·탐구] [놀이] [체험활동] [실내활동] 등 모두 금지)\n  "
+                )
         else:
-            area_line = (
-                "출력 영역(AI 선택 필요): 아래 표준 보육과정 5영역 중 활동명에 맞는 것을 반드시 하나 선택\n"
-                "  → 신체운동·건강 / 의사소통 / 사회관계 / 예술경험 / 자연탐구\n"
-                "  → 이 목록 외의 어떤 표현도 사용 불가 ([기본생활] [언어·의사소통] [창의·탐구] [놀이] [체험활동] [실내활동] 등 모두 금지)"
-            )
-        activities_text += f"\n[활동{i}]\n  {area_line}\n  활동명: {act.title}\n  교사 메모: {memo}\n"
+            area_line = ""
+        activities_text += f"\n[활동{i}]\n  {area_line}활동명: {act.title}\n  교사 메모: {memo}\n"
 
     daily_notes = []
     if (request.meal_note or "").strip():
@@ -402,12 +411,8 @@ def generate_daily_record(request: DailyRecordRequest):
             "(예: '물놀이🌊를 했어요'). 문장 끝에만 몰아 붙이지 마. 소제목에는 이모지를 쓰지 마."
         )
 
-    prompt = f"""
-너는 어린이집 보육교사의 알림장 작성을 돕는 AI야.
-{photo_section}{style_section}
-아래 활동 정보를 바탕으로 학부모님께 전달할 따뜻한 알림장을 작성해줘.
-
-=== 출력 형식 (반드시 준수) ===
+    if area_labels_on:
+        output_format_section = """=== 출력 형식 (반드시 준수) ===
 숫자. [영역명] 소제목
 내용 (250~350자, ~어요 체 위주)
 
@@ -418,7 +423,27 @@ def generate_daily_record(request: DailyRecordRequest):
 ※ 영역명은 반드시 대괄호 [ ] 안에 넣어야 해.
 
 활동이 여러 개면 성격에 따라 2개 묶음으로 나눠 작성.
-활동이 1개면 1개만 작성.
+활동이 1개면 1개만 작성."""
+    else:
+        output_format_section = """=== 출력 형식 (반드시 준수) ===
+숫자. 소제목
+내용 (250~350자, ~어요 체 위주)
+
+예시:
+1. 씩씩하게 뛰어놀아요
+오늘 한은이는 ...
+
+※ 소제목 앞에 [사회관계] [자연탐구] 같은 영역명·카테고리 태그를 절대 붙이지 마. 소제목만 자연스럽게 작성해.
+
+활동이 여러 개면 성격에 따라 2개 묶음으로 나눠 작성.
+활동이 1개면 1개만 작성."""
+
+    prompt = f"""
+너는 어린이집 보육교사의 알림장 작성을 돕는 AI야.
+{photo_section}{style_section}
+아래 활동 정보를 바탕으로 학부모님께 전달할 따뜻한 알림장을 작성해줘.
+
+{output_format_section}
 
 === 이름 규칙 ===
 아이 이름에서 첫 글자(성)를 제거하고 이름만 사용.
@@ -484,11 +509,21 @@ def generate_daily_record(request: DailyRecordRequest):
 알림장만 작성해줘.
 """
 
+    if area_labels_on:
+        area_rule = (
+            "활동 영역은 입력에 '출력 영역(고정)'으로 표시된 경우 그대로 쓰고, "
+            "'출력 영역(AI 선택 필요)'인 경우 표준 보육과정 5영역 — 신체운동·건강 / 의사소통 / 사회관계 / 예술경험 / 자연탐구 — 중 하나만 선택해. "
+            "[기본생활]·[언어·의사소통]·[창의·탐구]·[놀이]·[실내활동]·[체험활동] 등 목록 외 영역명은 오답이야. "
+        )
+    else:
+        area_rule = (
+            "소제목 앞에 [사회관계]·[자연탐구] 같은 영역명·카테고리 대괄호 태그를 절대 붙이지 마. "
+            "숫자와 소제목만 자연스럽게 출력해 (예: '1. 씩씩하게 뛰어놀아요'). "
+        )
+
     instructions = (
         "너는 어린이집 보육교사의 알림장 작성을 돕는 전문 AI야. "
-        "활동 영역은 입력에 '출력 영역(고정)'으로 표시된 경우 그대로 쓰고, "
-        "'출력 영역(AI 선택 필요)'인 경우 표준 보육과정 5영역 — 신체운동·건강 / 의사소통 / 사회관계 / 예술경험 / 자연탐구 — 중 하나만 선택해. "
-        "[기본생활]·[언어·의사소통]·[창의·탐구]·[놀이]·[실내활동]·[체험활동] 등 목록 외 영역명은 오답이야. "
+        f"{area_rule}"
         "사진이 있으면 사진 속 장면(아이의 손동작·표정·시선·교구·색깔)을 최우선으로 구체적으로 묘사해. "
         "유아교육 의성어·의태어(퐁당, 끼적끼적, 쏙쏙, 폴짝폴짝, 알록달록, 갸웃갸웃 등)와 현장 용어('끼적이기', '탐색해 보고', '온몸으로 헤치며')를 활동 맥락에 맞게 자연스럽게 녹여 써. "
         "추상적인 '즐거웠어요/재미있었어요'만 반복하지 말고, 구체적 행동·표정·감각을 살려 학부모가 그 장면을 눈앞에서 보는 듯하게 작성해. "

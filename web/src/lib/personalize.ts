@@ -2,6 +2,7 @@
  * 공통 알림장 텍스트를 특정 아이 이름 기준으로 개인화.
  * "우리 반 친구들은~" → "길동이는~", "친구들이" → "길동이가" 처럼
  * 복수 지칭 표현을 아이 호격형 + 알맞은 조사로 치환한다.
+ * 성이 포함된 이름("홍길동")을 넘겨도 호칭엔 이름만 사용한다("길동이가").
  * 단, 아래 표현은 원본 그대로 남긴다:
  *  - "모든/많은/여러/… 친구들" (수량 관형사)
  *  - "친구들과 함께", "친구들끼리", "친구들 사이/서로"
@@ -15,6 +16,34 @@ function hasJongseong(word: string): boolean {
   const last = word.slice(-1);
   const code = last.charCodeAt(0) - 0xac00;
   return code >= 0 && code <= 11171 && code % 28 !== 0;
+}
+
+// 한국의 2음절 복성 (모두는 아니지만 흔한 것들 모음).
+const COMPOUND_SURNAMES = [
+  '남궁', '제갈', '황보', '사공', '서문', '선우',
+  '독고', '동방', '어금', '을지', '장곡', '탁발',
+  '무본', '단목', '망절',
+];
+
+function isAllHangul(s: string): boolean {
+  return /^[가-힣]+$/.test(s);
+}
+
+/**
+ * 성을 제거한 이름 부분만 반환.
+ * "홍길동" → "길동", "남궁민수" → "민수", "김철" → "철", "톰" → "톰".
+ * - 한글이 아니거나 1글자면 그대로 반환.
+ * - 4글자 이상이면 복성 여부 판별. 복성이면 앞 2글자, 아니면 앞 1글자 제거.
+ * - 2~3글자면 앞 1글자(성)만 제거.
+ */
+export function getGivenName(fullName: string): string {
+  const trimmed = fullName.trim();
+  if (trimmed.length <= 1) return trimmed;
+  if (!isAllHangul(trimmed)) return trimmed;
+  if (trimmed.length >= 4 && COMPOUND_SURNAMES.some((s) => trimmed.startsWith(s))) {
+    return trimmed.slice(2);
+  }
+  return trimmed.slice(1);
 }
 
 /** "길동" → "길동이", "지수" → "지수". 받침 있는 이름 뒤에만 호격 "이" 첨가. */
@@ -71,9 +100,9 @@ function startsWithOur(match: string): boolean {
 }
 
 export function personalizeText(text: string, rawName: string): string {
-  const name = rawName.trim();
-  if (!text || !name) return text;
-  const cf = toChildForm(name);
+  const givenName = getGivenName(rawName);
+  if (!text || !givenName) return text;
+  const cf = toChildForm(givenName);
 
   const guarded: string[] = [];
   const guard = (m: string): string => {
