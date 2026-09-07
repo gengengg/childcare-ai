@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getMonthlyPlan, weekOfMonth, type MonthlyPlan } from '@/lib/monthlyPlans';
+import { getMonthlyPlan, weekAssignment, type MonthlyPlan } from '@/lib/monthlyPlans';
 import { XIcon } from './icons';
 
 type Props = {
@@ -20,12 +20,12 @@ export function MonthlyPlanPicker({ open, onClose, className, date, onPick }: Pr
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [checked, setChecked] = useState<Set<string>>(new Set());
 
-  const [year, month] = useMemo(() => {
-    const d = new Date(date + 'T00:00:00');
-    return [d.getFullYear(), d.getMonth() + 1];
-  }, [date]);
-
-  const defaultWeek = useMemo(() => weekOfMonth(date), [date]);
+  // 8/31(월)~9/4(금) 같은 걸치는 주는 다음 달(9월)의 1주로 취급하므로
+  // 계획안도 그 달(9월) 것을 불러와야 한다.
+  const { year, month, week: defaultWeek } = useMemo(
+    () => weekAssignment(date),
+    [date]
+  );
 
   useEffect(() => {
     if (!open) return;

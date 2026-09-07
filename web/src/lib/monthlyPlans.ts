@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { getSupabaseUserId } from './session';
+import { firstWeekMondayOffset } from './weeklyDiaries';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ??
@@ -138,17 +139,36 @@ export async function deleteMonthlyPlan(
 }
 
 /**
- * ISO week 방식은 어린이집 관례와 다를 수 있음.
- * 여기서는 "그 달의 첫 월요일이 있는 주 = 1주" 방식을 쓴다.
- * (첫 월요일 이전 날짜는 1주에 포함)
+ * 그 날짜가 속한 (년, 월, 주)를 계산.
+ * 주 기준은 월~금. 달이 걸치는 주(예: 8/31 월 ~ 9/4 금)는 다음 달의 1주로 취급.
+ * 토·일도 그 주의 월요일이 속한 주로 함께 계산되므로 예) 9/6(일) → 9월 1주.
  */
-export function weekOfMonth(dateStr: string): number {
+export function weekAssignment(dateStr: string): {
+  year: number;
+  month: number;
+  week: number;
+} {
   const d = new Date(dateStr + 'T00:00:00');
-  if (isNaN(d.getTime())) return 1;
-  const day = d.getDate();
-  const firstDow = new Date(d.getFullYear(), d.getMonth(), 1).getDay(); // 0=일
-  // 그 달의 첫 월요일 날짜
-  const firstMonday = firstDow === 0 ? 2 : firstDow === 1 ? 1 : 9 - firstDow;
-  if (day < firstMonday) return 1;
-  return Math.floor((day - firstMonday) / 7) + 1;
+  if (isNaN(d.getTime())) return { year: 1970, month: 1, week: 1 };
+  const dow = d.getDay(); // 0=일..6=토
+  const daysBackToMonday = dow === 0 ? 6 : dow - 1;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - daysBackToMonday);
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  // 금요일이 속한 달 = 이 주가 소속되는 달 (걸치는 주는 다음 달의 1주)
+  const targetYear = friday.getFullYear();
+  const targetMonth = friday.getMonth() + 1;
+  const w1MondayOffset = firstWeekMondayOffset(targetYear, targetMonth - 1);
+  const w1Monday = new Date(targetYear, targetMonth - 1, w1MondayOffset);
+  const diffDays = Math.round(
+    (monday.getTime() - w1Monday.getTime()) / (24 * 3600 * 1000)
+  );
+  const week = Math.floor(diffDays / 7) + 1;
+  return { year: targetYear, month: targetMonth, week };
+}
+
+/** 옛 API: 그 날짜의 소속 월 안에서의 주 번호만 필요할 때. */
+export function weekOfMonth(dateStr: string): number {
+  return weekAssignment(dateStr).week;
 }

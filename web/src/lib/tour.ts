@@ -1,61 +1,47 @@
-import { getItem, removeItem, setItem } from './storage';
-import { getSupabaseUserId } from './session';
-import { supabase } from './supabase';
+import { Preferences } from '@capacitor/preferences';
 
 // 튜토리얼 내용이 바뀔 때마다 이 숫자를 증가시키면
 // SettingsScreen '튜토리얼 다시 보기' 옆에 업데이트 배지가 뜬다.
 // (자동으로 튜토리얼이 다시 뜨지는 않음 — 배지로만 유도)
 export const TOUR_VERSION = 3;
 
-const LOCAL_KEY = 'tour_seen_v2';
+// Capacitor Preferences 는 Android SharedPreferences / iOS NSUserDefaults 로 저장되어
+// 앱 재실행·백그라운드 종료에도 확실히 유지된다. (웹은 localStorage 로 fallback)
+// 이전 버전에서 raw localStorage 로 저장한 값은 legacy 마이그레이션으로 인계한다.
+const KEY = 'tour_seen_v2';
+const LEGACY_LOCAL_KEY = 'tour_seen_v2';
 
-async function readLocalVersion(): Promise<number> {
-  const raw = await getItem(LOCAL_KEY);
-  if (!raw) return 0;
-  // 기존 boolean 형식('1') 저장분과 호환. '1' == v2 튜토리얼 봤음.
-  if (raw === '1') return 2;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : 0;
-}
-
-// 로그인 사용자는 profiles.tour_seen_version 이 진짜 source of truth.
-// localStorage 는 iOS Safari ITP / 시크릿 모드 등에서 유실되므로 fallback 으로만 사용.
-async function readCloudVersion(userId: string): Promise<number> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('tour_seen_version')
-    .eq('id', userId)
-    .maybeSingle();
-  if (error) {
-    console.error('[tour.readCloud]', error);
-    return 0;
+let migrationDone = false;
+async function migrateLegacyLocalStorage(): Promise<void> {
+  if (migrationDone) return;
+  migrationDone = true;
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const legacy = window.localStorage.getItem(LEGACY_LOCAL_KEY);
+    if (!legacy) return;
+    const existing = await Preferences.get({ key: KEY });
+    if (!existing.value) {
+      await Preferences.set({ key: KEY, value: legacy });
+    }
+    // Preferences 웹 구현은 자체 prefix 를 쓰므로 raw 키를 지워도 안전.
+    window.localStorage.removeItem(LEGACY_LOCAL_KEY);
+  } catch {
+    // ignore
   }
-  const v = (data as { tour_seen_version?: number } | null)?.tour_seen_version;
-  return typeof v === 'number' && Number.isFinite(v) ? v : 0;
-}
-
-async function writeCloudVersion(userId: string, version: number): Promise<void> {
-  const { error } = await supabase
-    .from('profiles')
-    .update({ tour_seen_version: version })
-    .eq('id', userId);
-  if (error) console.error('[tour.writeCloud]', error);
 }
 
 async function readSeenVersion(): Promise<number> {
-  const userId = await getSupabaseUserId();
-  if (userId) {
-    const cloud = await readCloudVersion(userId);
-    if (cloud > 0) return cloud;
-    // 클라우드 값이 없을 때 로컬 값이 있으면 그 값을 승격 (한 번뿐인 이관).
-    const local = await readLocalVersion();
-    if (local > 0) {
-      await writeCloudVersion(userId, local);
-      return local;
-    }
+  await migrateLegacyLocalStorage();
+  try {
+    const { value } = await Preferences.get({ key: KEY });
+    if (!value) return 0;
+    // 옛 boolean 형식('1') 저장분 호환. '1' == v2 튜토리얼 봤음.
+    if (value === '1') return 2;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  } catch {
     return 0;
   }
-  return readLocalVersion();
 }
 
 export async function hasSeenTour(): Promise<boolean> {
@@ -64,10 +50,11 @@ export async function hasSeenTour(): Promise<boolean> {
 
 /** 현재 버전을 봤음으로 저장. 인자 없이 호출하면 TOUR_VERSION 저장. */
 export async function markTourSeen(version: number = TOUR_VERSION): Promise<void> {
-  const userId = await getSupabaseUserId();
-  if (userId) await writeCloudVersion(userId, version);
-  // 로컬에도 계속 저장 — 오프라인/로그아웃 상태에서도 재출현 방지.
-  await setItem(LOCAL_KEY, String(version));
+  try {
+    await Preferences.set({ key: KEY, value: String(version) });
+  } catch {
+    // ignore
+  }
 }
 
 /** 마지막으로 본 버전이 현재 버전보다 낮으면 업데이트가 있음. */
@@ -77,7 +64,9 @@ export async function hasTourUpdate(): Promise<boolean> {
 }
 
 export async function resetTour(): Promise<void> {
-  const userId = await getSupabaseUserId();
-  if (userId) await writeCloudVersion(userId, 0);
-  await removeItem(LOCAL_KEY);
+  try {
+    await Preferences.remove({ key: KEY });
+  } catch {
+    // ignore
+  }
 }

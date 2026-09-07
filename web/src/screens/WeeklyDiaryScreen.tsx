@@ -4,7 +4,7 @@ import { Card } from '@/components/Card';
 import { Header } from '@/components/Header';
 import { useToast } from '@/components/Toast';
 import { CalendarIcon, SparkleIcon } from '@/components/icons';
-import { getMonthlyPlan, weekOfMonth, type MonthlyPlan } from '@/lib/monthlyPlans';
+import { getMonthlyPlan, type MonthlyPlan } from '@/lib/monthlyPlans';
 import {
   WEEK_DAYS,
   WEEKDAYS_MON_TO_FRI,

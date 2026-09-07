@@ -175,22 +175,49 @@ export async function listWeeklyDiariesForMonth(
 }
 
 /**
+ * 그 달의 1주차 월요일이 몇일인지 반환 (음수/0 가능 → 전월).
+ * - 1일이 월: 1일
+ * - 1일이 화~금: 1일이 포함된 월-금 주가 이 달의 1주 (월요일은 전월)
+ * - 1일이 토/일: 그 주는 전체가 전월 → 그 다음 월요일이 1주
+ */
+export function firstWeekMondayOffset(year: number, monthIdx: number): number {
+  const dow = new Date(year, monthIdx, 1).getDay(); // 0=일..6=토
+  if (dow === 1) return 1;
+  if (dow >= 2 && dow <= 5) return 1 - (dow - 1);
+  if (dow === 6) return 3;
+  return 2; // 일
+}
+
+/**
+ * 이 달에 몇 주가 있는지. (달마다 4주 또는 5주)
+ * 다음 달 1주 월요일과 이 달 1주 월요일의 간격을 7로 나눈 값.
+ */
+export function weekCountOfMonth(year: number, month: number): number {
+  const w1 = firstWeekMondayOffset(year, month - 1);
+  const nextW1 = firstWeekMondayOffset(year, month); // 다음 달 (monthIdx 그대로 = month)
+  const w1Date = new Date(year, month - 1, w1);
+  const nextW1Date = new Date(year, month, nextW1);
+  const days = Math.round(
+    (nextW1Date.getTime() - w1Date.getTime()) / (24 * 3600 * 1000)
+  );
+  return Math.max(1, days / 7);
+}
+
+/**
  * 그 주의 각 요일 날짜(YYYY-MM-DD)를 계산.
- * 어린이집 관례: '그 달의 첫 월요일이 있는 주 = 1주'.
- * 5주가 되는 달도 있음.
+ * 주의 기준은 월~금. 달이 걸치는 주(예: 8/31~9/4)는 다음 달의 1주로 취급.
  */
 export function datesForWeek(
   year: number,
   month: number,
   weekNumber: number
 ): Record<WeekDay, string> {
-  const firstOfMonth = new Date(year, month - 1, 1);
-  const firstDow = firstOfMonth.getDay(); // 0=일
-  const firstMondayDay = firstDow === 0 ? 2 : firstDow === 1 ? 1 : 9 - firstDow;
-  const mondayDay = firstMondayDay + (weekNumber - 1) * 7;
+  const monthIdx = month - 1;
+  const week1MondayDay = firstWeekMondayOffset(year, monthIdx);
+  const mondayDay = week1MondayDay + (weekNumber - 1) * 7;
   const result = {} as Record<WeekDay, string>;
   for (let i = 0; i < WEEK_DAYS.length; i++) {
-    const d = new Date(year, month - 1, mondayDay + i);
+    const d = new Date(year, monthIdx, mondayDay + i);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');

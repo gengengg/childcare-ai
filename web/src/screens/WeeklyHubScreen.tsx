@@ -26,6 +26,7 @@ import {
   saveMonthlyPlan,
   type MonthlyPlan,
 } from '@/lib/monthlyPlans';
+import { weekCountOfMonth } from '@/lib/weeklyDiaries';
 import { SkeletonLines } from '@/components/Skeleton';
 
 /**
@@ -144,8 +145,11 @@ export function WeeklyHubScreen() {
     );
   };
 
-  // 주 개수: 월간계획안이 있으면 그 개수, 없으면 4주 기본
-  const weekCount = plan?.weeks.length || 4;
+  // 주 개수: 이 달의 실제 주 수(4 또는 5) 기준. 월간계획안이 더 많은 주를 담고 있으면 그것을 존중.
+  const weekCount = Math.max(
+    plan?.weeks.length ?? 0,
+    weekCountOfMonth(year, month)
+  );
   const weekNumbers = Array.from({ length: weekCount }, (_, i) => i + 1);
 
   return (
