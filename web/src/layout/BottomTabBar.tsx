@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import {
   PencilIcon,
   FolderIcon,
+  GridIcon,
   NoteIcon,
   UsersIcon,
   SettingsIcon,
@@ -11,6 +12,7 @@ import {
 const tabs = [
   { to: '/records', label: '보관함', Icon: FolderIcon, tourKey: 'tab-records' },
   { to: '/weekly', label: '학급', Icon: NoteIcon, tourKey: 'tab-weekly' },
+  { to: '/worksheets', label: '활동지', Icon: GridIcon, tourKey: 'tab-worksheets' },
   { to: '/', label: '작성', Icon: PencilIcon, end: true, tourKey: 'tab-write' },
   { to: '/children', label: '아이', Icon: UsersIcon, tourKey: 'tab-children' },
   { to: '/settings', label: '설정', Icon: SettingsIcon, tourKey: 'tab-settings' },
@@ -22,7 +24,7 @@ export function BottomTabBar() {
       className="fixed bottom-0 inset-x-0 z-40 border-t border-cream-200/80 bg-surface/95 backdrop-blur-md"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 4px)' }}
     >
-      <div className="mx-auto max-w-md grid grid-cols-5 h-16 pt-1">
+      <div className="mx-auto max-w-md grid grid-cols-6 h-16 pt-1">
         {tabs.map((t) => (
           <NavLink
             key={t.to}

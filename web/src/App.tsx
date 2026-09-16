@@ -60,6 +60,14 @@ const WeeklyDiaryScreen = lazy(() =>
 const WeeklyHubScreen = lazy(() =>
   import('./screens/WeeklyHubScreen').then((m) => ({ default: m.WeeklyHubScreen }))
 );
+const AdminWorksheetsScreen = lazy(() =>
+  import('./screens/AdminWorksheetsScreen').then((m) => ({
+    default: m.AdminWorksheetsScreen,
+  }))
+);
+const WorksheetsScreen = lazy(() =>
+  import('./screens/WorksheetsScreen').then((m) => ({ default: m.WorksheetsScreen }))
+);
 
 /** 화면 전환 로딩 폴백 */
 function PageFallback() {
@@ -108,6 +116,8 @@ export default function App() {
                         path="weekly-diary/:className/:year/:month/:week"
                         element={<WeeklyDiaryScreen />}
                       />
+                      <Route path="worksheets" element={<WorksheetsScreen />} />
+                      <Route path="admin/worksheets" element={<AdminWorksheetsScreen />} />
                     </Route>
 
                     <Route path="*" element={<Navigate to="/" replace />} />

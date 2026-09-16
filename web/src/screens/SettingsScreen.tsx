@@ -5,7 +5,7 @@ import { Card } from '@/components/Card';
 import { Header } from '@/components/Header';
 import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
-import { SettingsIcon, SparkleIcon, TrashIcon, UserIcon } from '@/components/icons';
+import { FolderIcon, SettingsIcon, SparkleIcon, TrashIcon, UserIcon } from '@/components/icons';
 import { getChildren, type Child } from '@/lib/children';
 import { resetOnboarding } from '@/lib/onboarding';
 import { hasTourUpdate, resetTour } from '@/lib/tour';
@@ -32,6 +32,7 @@ import {
 } from '@/lib/styleSamples';
 import { getThemePref, setThemePref, type ThemePref } from '@/lib/theme';
 import { multiRemove } from '@/lib/storage';
+import { isCurrentUserAdmin } from '@/lib/worksheets';
 
 type Tab = 'general' | 'style' | 'data';
 
@@ -97,6 +98,7 @@ function GeneralTab() {
   const [classSetting, setClassSetting] = useState<ShowClassSetting>('auto');
   const [children, setChildren] = useState<Child[]>([]);
   const [tourHasUpdate, setTourHasUpdate] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -106,6 +108,7 @@ function GeneralTab() {
       setClassSetting(await getShowClassSetting());
       setChildren(await getChildren());
       setTourHasUpdate(await hasTourUpdate());
+      setIsAdmin(await isCurrentUserAdmin());
     })();
   }, []);
 
@@ -134,6 +137,20 @@ function GeneralTab() {
     <>
       <AccountCard />
       <PasswordCard />
+
+      {isAdmin && (
+        <Card className="mb-4" hint="관리자">
+          <p className="text-[12px] text-subtle mb-3">
+            활동지 라이브러리를 추가·편집할 수 있어요.
+          </p>
+          <button
+            onClick={() => navigate('/admin/worksheets')}
+            className="btn-primary w-full"
+          >
+            <FolderIcon size={16} /> 활동지 라이브러리 관리
+          </button>
+        </Card>
+      )}
 
       <Card className="mb-4" hint="테마">
         <p className="text-[12px] text-subtle mb-3">
