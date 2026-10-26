@@ -3,6 +3,8 @@
  * 백엔드는 기존 Railway 배포를 그대로 재사용한다.
  */
 
+import { getAuthHeaders } from './session';
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ??
   'https://lesschildren-aigreater-production.up.railway.app';
@@ -38,7 +40,7 @@ export async function generateDailyRecordWithAI(
 ): Promise<DailyRecordResult> {
   const response = await fetch(`${API_BASE_URL}/generate-daily-record`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
     body: JSON.stringify({
       child_name: input.childName,
       class_name: input.className,
@@ -74,7 +76,7 @@ export type StyleSampleInput =
 export async function analyzeStyleSamples(samples: StyleSampleInput[]): Promise<string> {
   const response = await fetch(`${API_BASE_URL}/analyze-style`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
     body: JSON.stringify({
       samples: samples.map((s) =>
         s.kind === 'text'
@@ -131,7 +133,7 @@ export async function generateObservationStructured(
 ): Promise<ObservationCategories> {
   const response = await fetch(`${API_BASE_URL}/generate-observation-structured`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
     body: JSON.stringify({
       child_name: input.childName,
       class_name: input.className,
@@ -170,7 +172,7 @@ export type ExportDocxInput = {
 export async function exportObservationDocx(input: ExportDocxInput): Promise<Blob> {
   const response = await fetch(`${API_BASE_URL}/export-observation-docx`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
     body: JSON.stringify({
       child_name: input.childName,
       class_name: input.className,

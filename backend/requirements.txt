@@ -6,3 +6,4 @@ python-docx
 lxml
 python-multipart
 pdfplumber
+httpx

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { getSupabaseUserId } from './session';
+import { getAuthHeaders, getSupabaseUserId } from './session';
 import { getAllDailyRecords, type DailyRecord } from './dailyRecords';
 
 const API_BASE_URL =
@@ -422,7 +422,7 @@ export async function exportWeeklyDiaryDocx(input: {
   };
   const res = await fetch(`${API_BASE_URL}/export-weekly-diary-docx`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -480,7 +480,7 @@ export async function generateWeeklyEvaluations(input: {
   };
   const res = await fetch(`${API_BASE_URL}/generate-weekly-evaluations`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {

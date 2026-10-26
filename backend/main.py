@@ -2,17 +2,20 @@ import io
 import json
 import os
 import re
+import threading
+import time
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import quote
 
+import httpx
 import pdfplumber
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from lxml import etree
@@ -29,13 +32,110 @@ client_observation = OpenAI(api_key=api_key, timeout=90.0, max_retries=0)
 
 app = FastAPI()
 
+# 허용 출처. 쉼표로 구분해 ALLOWED_ORIGINS 환경변수로 덮어쓸 수 있다.
+# capacitor://localhost, https://localhost 는 iOS/Android 앱 WebView 출처.
+_DEFAULT_ORIGINS = (
+    "https://childcareai.netlify.app,"
+    "capacitor://localhost,"
+    "https://localhost,"
+    "http://localhost,"
+    "http://localhost:5173"
+)
+allowed_origins = [
+    o.strip() for o in os.getenv("ALLOWED_ORIGINS", _DEFAULT_ORIGINS).split(",") if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=False,  # 쿠키 미사용. 인증은 Authorization 헤더로.
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+
+# ──────────────── 인증 / 사용량 제한 ────────────────
+#
+# 프론트는 Supabase 로그인 토큰을 "Authorization: Bearer <access_token>" 로 보낸다.
+# 백엔드는 Supabase Auth(/auth/v1/user)에 토큰을 물어 유효성을 확인한다.
+# (JWT 서명 방식이 바뀌어도 동작하도록 직접 디코딩하지 않음.)
+#
+# REQUIRE_AUTH=true 이면 토큰 없는 요청을 거부한다. 프론트 배포 → 백엔드
+# 환경변수 켜기 순서로 무중단 전환하기 위해 기본값은 false.
+
+supabase_url = (os.getenv("SUPABASE_URL") or "").rstrip("/")
+supabase_anon_key = os.getenv("SUPABASE_ANON_KEY") or ""
+require_auth = os.getenv("REQUIRE_AUTH", "false").lower() == "true"
+daily_ai_limit = int(os.getenv("DAILY_AI_LIMIT", "200"))
+
+_TOKEN_CACHE_TTL = 300  # 초
+_token_cache: Dict[str, Tuple[str, float]] = {}  # token -> (user_id, 만료시각)
+_usage: Dict[str, Tuple[str, int]] = {}  # user_id -> (날짜, 호출 수)
+_auth_lock = threading.Lock()
+
+
+def _verify_token(token: str) -> Optional[str]:
+    now = time.time()
+    with _auth_lock:
+        cached = _token_cache.get(token)
+        if cached and cached[1] > now:
+            return cached[0]
+
+    if not supabase_url or not supabase_anon_key:
+        print("AUTH CONFIG ERROR: SUPABASE_URL / SUPABASE_ANON_KEY 미설정")
+        return None
+    try:
+        res = httpx.get(
+            f"{supabase_url}/auth/v1/user",
+            headers={"apikey": supabase_anon_key, "Authorization": f"Bearer {token}"},
+            timeout=5.0,
+        )
+    except httpx.HTTPError as e:
+        print("AUTH VERIFY ERROR:", repr(e))
+        raise HTTPException(status_code=503, detail="인증 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.")
+    if res.status_code != 200:
+        return None
+    user_id = res.json().get("id")
+    if not user_id:
+        return None
+
+    with _auth_lock:
+        if len(_token_cache) > 5000:
+            _token_cache.clear()
+        _token_cache[token] = (user_id, now + _TOKEN_CACHE_TTL)
+    return user_id
+
+
+def require_user(authorization: Optional[str] = Header(default=None)) -> Optional[str]:
+    """로그인 유저 id 반환. REQUIRE_AUTH=false 이고 토큰이 없으면 None."""
+    token = ""
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization[7:].strip()
+
+    if not token:
+        if require_auth:
+            raise HTTPException(status_code=401, detail="로그인이 필요해요.")
+        return None
+
+    user_id = _verify_token(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="로그인이 만료됐어요. 다시 로그인해 주세요.")
+    return user_id
+
+
+def limit_ai_usage(user_id: Optional[str] = Depends(require_user)) -> Optional[str]:
+    """OpenAI 를 호출하는 엔드포인트용: 유저당 하루 호출 수 제한."""
+    if not user_id:
+        return None
+    today = time.strftime("%Y-%m-%d")
+    with _auth_lock:
+        day, count = _usage.get(user_id, (today, 0))
+        if day != today:
+            count = 0
+        if count >= daily_ai_limit:
+            raise HTTPException(status_code=429, detail="오늘 AI 사용 한도를 모두 썼어요. 내일 다시 이용해 주세요.")
+        _usage[user_id] = (today, count + 1)
+    return user_id
 
 
 # ──────────────── 요청 모델 ────────────────
@@ -305,7 +405,7 @@ def health_check():
     return {"status": "ok", "message": "childcare-ai backend is running"}
 
 
-@app.post("/generate-daily-record")
+@app.post("/generate-daily-record", dependencies=[Depends(limit_ai_usage)])
 def generate_daily_record(request: DailyRecordRequest):
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
@@ -550,7 +650,7 @@ def generate_daily_record(request: DailyRecordRequest):
         }
 
 
-@app.post("/analyze-style")
+@app.post("/analyze-style", dependencies=[Depends(limit_ai_usage)])
 def analyze_style(request: AnalyzeStyleRequest):
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
@@ -625,7 +725,7 @@ def analyze_style(request: AnalyzeStyleRequest):
         raise HTTPException(status_code=500, detail=f"문체 분석 중 오류: {repr(error)}")
 
 
-@app.post("/generate-observation-structured")
+@app.post("/generate-observation-structured", dependencies=[Depends(limit_ai_usage)])
 def generate_observation_structured(request: ObservationRequest):
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
@@ -634,7 +734,7 @@ def generate_observation_structured(request: ObservationRequest):
     return _run_structured_observation(request)
 
 
-@app.post("/export-observation-docx")
+@app.post("/export-observation-docx", dependencies=[Depends(require_user)])
 def export_observation_docx(request: ExportDocxRequest):
     try:
         docx_bytes = build_observation_docx(request)
@@ -812,7 +912,7 @@ def _extract_docx_text(content: bytes) -> str:
     return "\n".join(parts)
 
 
-@app.post("/parse-monthly-plan")
+@app.post("/parse-monthly-plan", dependencies=[Depends(limit_ai_usage)])
 async def parse_monthly_plan(file: UploadFile = File(...)):
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")
@@ -1340,7 +1440,7 @@ def _force_east_asia_font(run, font_name: str):
     rFonts.set(qn("w:eastAsia"), font_name)
 
 
-@app.post("/export-weekly-diary-docx")
+@app.post("/export-weekly-diary-docx", dependencies=[Depends(require_user)])
 def export_weekly_diary_docx(req: ExportWeeklyDiaryRequest):
     try:
         docx_bytes = build_weekly_diary_docx(req)
@@ -1391,7 +1491,7 @@ def _resolve_age_context(age_group: str) -> tuple[str, str]:
     return display, "영아"
 
 
-@app.post("/generate-weekly-evaluations")
+@app.post("/generate-weekly-evaluations", dependencies=[Depends(limit_ai_usage)])
 def generate_weekly_evaluations(request: GenerateWeeklyEvaluationsRequest):
     if not api_key:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY가 설정되지 않았습니다.")

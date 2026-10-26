@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { getSupabaseUserId } from './session';
+import { getAuthHeaders, getSupabaseUserId } from './session';
 import { firstWeekMondayOffset } from './weeklyDiaries';
 
 const API_BASE_URL =
@@ -58,6 +58,7 @@ export async function parseMonthlyPlanFile(file: File): Promise<{
   form.append('file', file);
   const res = await fetch(`${API_BASE_URL}/parse-monthly-plan`, {
     method: 'POST',
+    headers: await getAuthHeaders(),
     body: form,
   });
   if (!res.ok) {
