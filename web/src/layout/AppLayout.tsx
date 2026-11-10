@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { BottomTabBar } from './BottomTabBar';
-import { CreateSheetProvider } from './CreateSheet';
+import { CreateMenuProvider } from './CreateMenu';
 
 /**
  * 통합 레이아웃 — 모든 앱 화면(로그인 제외)에서 하단 탭 항상 표시.
@@ -8,14 +8,14 @@ import { CreateSheetProvider } from './CreateSheet';
  */
 export function AppLayout() {
   return (
-    <CreateSheetProvider>
+    <CreateMenuProvider>
       <div className="min-h-full bg-page">
         <main className="mx-auto max-w-md px-4 pt-3 pb-28">
           <Outlet />
         </main>
         <BottomTabBar />
       </div>
-    </CreateSheetProvider>
+    </CreateMenuProvider>
   );
 }
 

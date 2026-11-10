@@ -49,7 +49,7 @@ import {
 } from '@/lib/settings';
 import { Walkthrough, type TourStep } from '@/components/Walkthrough';
 import { BrandMark } from '@/components/BrandMark';
-import { useCreateSheet } from '@/layout/CreateSheet';
+import { useCreateMenu } from '@/layout/CreateMenu';
 import { hasSeenTour, markTourSeen } from '@/lib/tour';
 import { getGivenName, personalizeText } from '@/lib/personalize';
 
@@ -145,8 +145,8 @@ const TOUR_STEPS: TourStep[] = [
     title: '작성',
     description: (
       <>
-        <strong>꾹 누르면</strong> 알림장 말고도 <strong>관찰일지·주간보육일지·오늘 활동 내용</strong>을
-        바로 고를 수 있어요. 위의 <strong>다른 문서</strong> 버튼으로도 열려요.
+        가운데 버튼을 <strong>꾹 누르면</strong> 관찰일지·주간일지 같은 <strong>다른 문서</strong>가
+        동그랗게 나와요. 손을 떼지 않고 끌어서 골라도 돼요. 위의 <strong>다른 문서</strong> 버튼으로도 열려요.
       </>
     ),
   },
@@ -184,7 +184,7 @@ const TOUR_STEPS: TourStep[] = [
 
 export function WriteScreen() {
   const navigate = useNavigate();
-  const { open: openCreateSheet } = useCreateSheet();
+  const { open: openCreateMenu } = useCreateMenu();
   const toast = useToast();
   const draftRef = useRef<HTMLDivElement | null>(null);
 
@@ -657,8 +657,8 @@ export function WriteScreen() {
         <Shortcut
           icon={<PlusIcon size={20} />}
           label="다른 문서"
-          onClick={(e) => openCreateSheet(e.currentTarget)}
-          tourKey="create-sheet"
+          onClick={(e) => openCreateMenu(e.currentTarget)}
+          tourKey="create-menu"
         />
       </div>
 
