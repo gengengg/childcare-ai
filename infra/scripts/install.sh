@@ -37,6 +37,13 @@ for v in APP_DOMAIN PROXY_DOMAIN AI_DOMAIN; do
   [ -n "$val" ] || die "ontoegeun.env 의 $v 가 비어 있어요."
 done
 
+# ── 0. 스왑 메모리 (2~4GB 서버에서 빌드·업데이트할 때 메모리 부족 방지) ──
+if [ ! -f /swapfile ]; then
+  log "스왑 2GB 만들기"
+  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile
+  grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+
 # ── 1. 공식 Supabase 설치 ──────────────────────────────────────
 if [ ! -f "$SB/docker-compose.yml" ]; then
   log "공식 Supabase self-hosted 설치 ($SUPABASE_REF)"
