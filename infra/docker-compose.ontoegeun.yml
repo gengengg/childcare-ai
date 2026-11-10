@@ -1,0 +1,54 @@
+# 온퇴근 전용 Compose 오버라이드.
+# 공식 Supabase self-hosted(docker-compose.yml + docker-compose.caddy.yml) 위에 얹어서 쓴다.
+#   - caddy: 앱(웹) / AI 서버 / Supabase API 세 도메인을 한 번에 HTTPS로 서비스
+#   - ai: backend/ 의 FastAPI (알림장·관찰일지 AI 생성)
+#   - auth: Google / Kakao 로그인, 한국어 메일 템플릿(6자리 코드 포함)
+#
+# install.sh 가 이 파일을 Supabase 프로젝트 폴더에 복사하고 COMPOSE_FILE 에 추가한다.
+# 경로 기준: Supabase 프로젝트 폴더(/opt/ontoegeun/supabase). 앱 저장소는 ../app
+
+services:
+  caddy:
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      AI_DOMAIN: ${AI_DOMAIN}
+    volumes:
+      # 공식 Caddyfile 대신 온퇴근용 Caddyfile 사용 (같은 대상 경로 → 교체)
+      - ../app/infra/caddy:/etc/caddy:ro
+      - ../app/web/dist:/srv/web:ro
+      - ../app/infra/email-templates:/srv/email-templates:ro
+    depends_on:
+      ai:
+        condition: service_started
+
+  ai:
+    container_name: ontoegeun-ai
+    build:
+      context: ../app/backend
+    restart: unless-stopped
+    env_file:
+      - ../app/backend/.env
+    expose:
+      - "8000"
+
+  auth:
+    environment:
+      # ── Google 로그인 ──
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${GOOGLE_ENABLED:-false}
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_SECRET:-}
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${API_EXTERNAL_URL}/callback
+      # ── 카카오 로그인 ──
+      GOTRUE_EXTERNAL_KAKAO_ENABLED: ${KAKAO_ENABLED:-false}
+      GOTRUE_EXTERNAL_KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
+      GOTRUE_EXTERNAL_KAKAO_SECRET: ${KAKAO_SECRET:-}
+      GOTRUE_EXTERNAL_KAKAO_REDIRECT_URI: ${API_EXTERNAL_URL}/callback
+      # ── 한국어 메일 템플릿 (앱 화면의 6자리 코드 입력과 맞추기 위해 {{ .Token }} 포함) ──
+      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: "[온퇴근] 회원가입 확인 코드"
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "[온퇴근] 로그인 코드"
+      GOTRUE_MAILER_SUBJECTS_RECOVERY: "[온퇴근] 비밀번호 재설정 코드"
+      GOTRUE_MAILER_SUBJECTS_EMAIL_CHANGE: "[온퇴근] 이메일 변경 확인"
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: https://${APP_DOMAIN}/_email/confirmation.html
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: https://${APP_DOMAIN}/_email/magic_link.html
+      GOTRUE_MAILER_TEMPLATES_RECOVERY: https://${APP_DOMAIN}/_email/recovery.html
+      GOTRUE_MAILER_TEMPLATES_EMAIL_CHANGE: https://${APP_DOMAIN}/_email/email_change.html

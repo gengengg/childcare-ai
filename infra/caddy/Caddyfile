@@ -1,0 +1,63 @@
+# 온퇴근 Caddyfile — 인증서(HTTPS)는 Caddy가 Let's Encrypt로 자동 발급/갱신한다.
+#
+#   {$APP_DOMAIN}    → 앱 화면 (web/dist)
+#   {$AI_DOMAIN}     → AI 서버 (FastAPI)
+#   {$PROXY_DOMAIN}  → Supabase API + 관리 화면(Studio, 비밀번호 보호)
+#
+# 첫 블록은 공식 supabase/docker/volumes/proxy/caddy/Caddyfile 과 같다.
+
+{$PROXY_DOMAIN} {
+	@supabase_api path /auth/v1/* /rest/v1/* /graphql/v1 /realtime/v1/* /storage/v1/* /functions/v1/* /mcp /sso/* /.well-known/oauth-authorization-server/auth/v1
+
+	handle @supabase_api {
+		reverse_proxy api-gw:8000
+	}
+
+	handle {
+		basic_auth {
+			# PROXY_AUTH_PASSWORD 는 시작할 때 bcrypt 로 바뀐다
+			{$PROXY_AUTH_USERNAME} {$PROXY_AUTH_PASSWORD}
+		}
+		reverse_proxy studio:3000
+	}
+
+	header -server
+}
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+
+	# Auth 서버가 읽어가는 메일 템플릿
+	handle_path /_email/* {
+		root * /srv/email-templates
+		file_server
+	}
+
+	handle {
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+	}
+
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	@html path / /index.html /sw.js /manifest.webmanifest
+	header @html Cache-Control "no-cache"
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-server
+	}
+}
+
+www.{$APP_DOMAIN} {
+	redir https://{$APP_DOMAIN}{uri} permanent
+}
+
+{$AI_DOMAIN} {
+	reverse_proxy ai:8000
+	header -server
+}

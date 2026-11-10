@@ -66,3 +66,4 @@ test_landscape.docx
 
 # ── Legacy React Native app (kept locally, own git repo) ─
 mobile/
+infra/ontoegeun.env

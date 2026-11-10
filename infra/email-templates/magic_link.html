@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>로그인 코드가 도착했어요</title></head>
+<body style="margin:0;padding:0;background:#F2F4F6;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#191F28;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F4F6;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#FFFFFF;border-radius:24px;padding:32px 28px;">
+        <tr><td>
+          <p style="margin:0 0 20px;font-size:15px;font-weight:700;color:#4E6B04;">온퇴근</p>
+          <h1 style="margin:0 0 12px;font-size:24px;line-height:1.35;font-weight:700;">로그인 코드가 도착했어요</h1>
+          <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#4E5968;">비밀번호 없이 로그인하려면 아래 코드를 입력하거나 버튼을 눌러 주세요.</p>
+          <p style="margin:0 0 8px;font-size:14px;color:#626C79;">앱 화면에 아래 6자리 코드를 입력해 주세요.</p>
+          <p style="margin:0 0 28px;font-size:34px;letter-spacing:8px;font-weight:800;color:#191F28;">{{ .Token }}</p>
+          <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#5B7A05;color:#FFFFFF;text-decoration:none;font-size:17px;font-weight:700;padding:16px 28px;border-radius:16px;">바로 로그인하기</a>
+          <p style="margin:28px 0 0;font-size:14px;line-height:1.6;color:#626C79;">요청하지 않으셨다면 이 메일은 무시해도 괜찮아요. 코드는 잠시 후 만료돼요.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
