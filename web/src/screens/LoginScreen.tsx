@@ -15,16 +15,18 @@ import {
 } from '@/lib/auth';
 import { setRememberMe } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { SparkleIcon } from '@/components/icons';
+import { ChevronLeftIcon } from '@/components/icons';
 import { BrandMark } from '@/components/BrandMark';
 import { VerifyCodePanel } from '@/components/VerifyCodePanel';
 
 type Mode = 'signin' | 'signup';
+type Step = 'start' | 'email';
 
 export function LoginScreen() {
   const toast = useToast();
   const { refreshGuest } = useAuth();
   const [mode, setMode] = useState<Mode>('signin');
+  const [step, setStep] = useState<Step>('start');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -160,31 +162,93 @@ export function LoginScreen() {
     );
   }
 
-  return (
-    <div className="min-h-full flex flex-col justify-between py-8 px-6">
-      <div className="pt-8">
-        <BrandMark variant="emblem" size={96} label="온퇴근" className="mb-6 -ml-1.5" />
-        <h1 className="text-[26px] font-bold text-ink leading-tight tracking-tight mb-3">
-          로그인하고
-          <br />
-          어디서든 이어서 써요
-        </h1>
-        <p className="text-[16px] text-gray-600 leading-relaxed">
-          알림장, 아이 목록, 문체가 클라우드에 저장돼 다른 기기에서도 이어서 쓸 수 있어요.
-        </p>
-      </div>
+  // ── 첫 화면: 카카오 · 구글 원탭 + 이메일은 '다른 방법' ──
+  if (step === 'start') {
+    return (
+      <div className="min-h-full flex flex-col justify-between py-8 px-6">
+        <div className="pt-10">
+          <BrandMark variant="emblem" size={104} label="온퇴근" className="mb-7 -ml-1.5" />
+          <h1 className="text-[28px] font-bold text-ink leading-tight tracking-tight mb-3">
+            알림장은 AI에게,
+            <br />
+            선생님은 제시간에 퇴근
+          </h1>
+          <p className="text-[17px] text-gray-600 leading-relaxed">
+            로그인하면 어느 기기에서든 이어서 쓸 수 있어요.
+          </p>
+        </div>
 
-      <div className="pt-6 space-y-3">
-        <div className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-2xl">
+        <div className="pt-8 space-y-3">
+          {KAKAO_LOGIN_ENABLED && (
+            <button
+              onClick={handleKakao}
+              disabled={busy}
+              className="w-full min-h-[56px] flex items-center justify-center gap-2.5 rounded-2xl px-5
+                bg-[#FEE500] text-[17px] font-bold text-black/[.85] active:brightness-95 disabled:opacity-50 transition"
+            >
+              <KakaoIcon />
+              카카오로 3초 만에 시작하기
+            </button>
+          )}
+
+          <button
+            onClick={handleGoogle}
+            disabled={busy}
+            className="w-full min-h-[56px] flex items-center justify-center gap-2.5 bg-surface border border-gray-300
+              rounded-2xl px-5 text-[17px] font-semibold text-ink hover:bg-gray-50 disabled:opacity-50 transition"
+          >
+            <GoogleIcon />
+            Google로 시작하기
+          </button>
+
+          <button
+            onClick={() => setStep('email')}
+            disabled={busy}
+            className="btn-ghost w-full min-h-[56px] text-[17px]"
+          >
+            이메일로 로그인 · 회원가입
+          </button>
+
+          <button
+            onClick={handleGuest}
+            className="w-full text-center text-[15px] text-subtle underline underline-offset-4 py-3"
+          >
+            로그인 없이 둘러보기
+          </button>
+          <p className="text-center text-[13px] text-subtle -mt-2">
+            둘러보기 데이터는 이 기기에만 저장돼요.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 이메일 로그인 · 회원가입 ──
+  return (
+    <div className="min-h-full flex flex-col py-6 px-6">
+      <button
+        type="button"
+        onClick={() => setStep('start')}
+        aria-label="뒤로 가기"
+        className="w-11 h-11 -ml-3 mb-2 rounded-full flex items-center justify-center text-ink active:bg-gray-200"
+      >
+        <ChevronLeftIcon size={26} />
+      </button>
+      <h1 className="text-[26px] font-bold text-ink leading-tight tracking-tight mb-6">
+        이메일로 {mode === 'signup' ? '회원가입' : '로그인'}
+      </h1>
+
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-2xl" role="tablist">
           {(['signin', 'signup'] as const).map((m) => (
             <button
               key={m}
+              role="tab"
+              aria-selected={mode === m}
               onClick={() => setMode(m)}
               className={clsx(
-                'text-center py-2.5 rounded-xl text-[15px] font-medium transition',
-                mode === m
-                  ? 'bg-surface text-ink shadow-sm font-bold'
-                  : 'text-subtle'
+                'text-center min-h-[44px] py-2.5 rounded-xl text-[15px] font-medium transition',
+                mode === m ? 'bg-surface text-ink shadow-sm font-bold' : 'text-subtle'
               )}
             >
               {m === 'signin' ? '로그인' : '회원가입'}
@@ -200,6 +264,7 @@ export function LoginScreen() {
           spellCheck={false}
           className="field-input"
           placeholder="이메일 주소"
+          aria-label="이메일 주소"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={busy}
@@ -209,6 +274,7 @@ export function LoginScreen() {
           autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
           className="field-input"
           placeholder="비밀번호 (6자 이상)"
+          aria-label="비밀번호"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={busy}
@@ -222,77 +288,30 @@ export function LoginScreen() {
             type="checkbox"
             checked={remember}
             onChange={(e) => handleRememberChange(e.target.checked)}
-            className="w-4 h-4 accent-brand-500"
+            className="w-5 h-5 accent-brand-500"
           />
-          <span className="text-[14px] text-ink">자동 로그인</span>
-          <span className="text-[13px] text-subtle">
-            (끄면 브라우저 종료 시 로그아웃)
-          </span>
+          <span className="text-[15px] text-ink">자동 로그인</span>
         </label>
 
-        <button
-          onClick={handleSubmit}
-          disabled={busy}
-          className="btn-primary w-full"
-        >
-          <SparkleIcon size={16} />
+        <button onClick={handleSubmit} disabled={busy} className="btn-primary w-full">
           {busy ? '처리 중…' : mode === 'signup' ? '회원가입' : '로그인'}
         </button>
 
-        {mode === 'signup' && (
-          <p className="text-[13px] text-subtle text-center leading-relaxed">
-            회원가입 후 이메일로 인증 코드가 발송돼요.
+        {mode === 'signup' ? (
+          <p className="text-[14px] text-subtle text-center leading-relaxed">
+            가입하면 이메일로 6자리 인증 코드가 와요.
           </p>
-        )}
-
-        {mode === 'signin' && (
-          <div className="flex items-center justify-center gap-3 text-[14px] text-subtle py-1">
-            <Link to="/find-password" className="hover:text-gray-700 underline-offset-4 hover:underline">
+        ) : (
+          <div className="flex items-center justify-center gap-4 text-[15px] text-subtle py-1">
+            <Link to="/find-password" className="underline underline-offset-4">
               비밀번호 재설정
             </Link>
+            <span aria-hidden>·</span>
+            <button onClick={handleMagicLink} disabled={busy} className="underline underline-offset-4">
+              비밀번호 없이 코드로 로그인
+            </button>
           </div>
         )}
-
-        <div className="flex items-center gap-3 py-1">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-[14px] text-subtle">또는</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
-
-        {KAKAO_LOGIN_ENABLED && (
-          <button
-            onClick={handleKakao}
-            disabled={busy}
-            className="w-full min-h-[52px] flex items-center justify-center gap-2 rounded-2xl py-3 px-5
-              bg-[#FEE500] text-[16px] font-semibold text-black/[.85] active:brightness-95 disabled:opacity-50 transition"
-          >
-            <KakaoIcon />
-            카카오 로그인
-          </button>
-        )}
-
-        <button
-          onClick={handleGoogle}
-          disabled={busy}
-          className="w-full min-h-[52px] flex items-center justify-center gap-2 bg-surface border border-gray-300 rounded-2xl py-3 px-5 text-[16px] font-semibold text-ink hover:bg-gray-50 disabled:opacity-50 transition"
-        >
-          <GoogleIcon />
-          Google로 계속하기
-        </button>
-
-        <button className="btn-outline w-full" onClick={handleMagicLink} disabled={busy}>
-          이메일 링크로 로그인 (비밀번호 없이)
-        </button>
-
-        <button
-          onClick={handleGuest}
-          className="w-full text-center text-[14px] text-subtle underline underline-offset-4 py-3"
-        >
-          로그인 없이 게스트로 시작
-        </button>
-        <p className="text-center text-[13px] text-subtle -mt-1">
-          게스트 데이터는 이 기기에만 저장돼요.
-        </p>
       </div>
     </div>
   );
