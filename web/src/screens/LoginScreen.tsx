@@ -7,6 +7,8 @@ import {
   enterGuestMode,
   resendSignupConfirmation,
   signInWithGoogle,
+  signInWithKakao,
+  KAKAO_LOGIN_ENABLED,
   signInWithMagicLink,
   signInWithPassword,
   signUpWithPassword,
@@ -96,6 +98,16 @@ export function LoginScreen() {
       await signInWithGoogle();
     } catch (e) {
       toast.show(e instanceof Error ? e.message : 'Google 로그인 실패');
+      setBusy(false);
+    }
+  };
+
+  const handleKakao = async () => {
+    setBusy(true);
+    try {
+      await signInWithKakao();
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : '카카오 로그인 실패');
       setBusy(false);
     }
   };
@@ -247,10 +259,22 @@ export function LoginScreen() {
           <div className="flex-1 h-px bg-gray-200" />
         </div>
 
+        {KAKAO_LOGIN_ENABLED && (
+          <button
+            onClick={handleKakao}
+            disabled={busy}
+            className="w-full min-h-[52px] flex items-center justify-center gap-2 rounded-2xl py-3 px-5
+              bg-[#FEE500] text-[16px] font-semibold text-black/[.85] active:brightness-95 disabled:opacity-50 transition"
+          >
+            <KakaoIcon />
+            카카오 로그인
+          </button>
+        )}
+
         <button
           onClick={handleGoogle}
           disabled={busy}
-          className="w-full flex items-center justify-center gap-2 bg-surface border border-gray-300 rounded-2xl py-3 px-5 text-[15px] font-semibold text-ink hover:bg-gray-50 disabled:opacity-50 transition"
+          className="w-full min-h-[52px] flex items-center justify-center gap-2 bg-surface border border-gray-300 rounded-2xl py-3 px-5 text-[16px] font-semibold text-ink hover:bg-gray-50 disabled:opacity-50 transition"
         >
           <GoogleIcon />
           Google로 계속하기
@@ -271,6 +295,18 @@ export function LoginScreen() {
         </p>
       </div>
     </div>
+  );
+}
+
+/** 카카오 말풍선 심볼 (카카오 로그인 디자인 가이드: #FEE500 배경 + 검정 심볼/글자) */
+function KakaoIcon() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="#000000"
+        d="M12 3C6.48 3 2 6.48 2 10.78c0 2.78 1.86 5.21 4.66 6.59l-.95 3.47c-.08.31.27.56.54.38l4.14-2.75c.53.06 1.07.09 1.61.09 5.52 0 10-3.48 10-7.78S17.52 3 12 3Z"
+      />
+    </svg>
   );
 }
 

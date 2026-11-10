@@ -29,6 +29,24 @@ export async function signInWithGoogle(): Promise<void> {
   if (error) throw error;
 }
 
+/** 카카오 로그인 사용 여부. Supabase(또는 셀프호스팅 Auth)에 Kakao Provider를 켠 뒤 true로. */
+export const KAKAO_LOGIN_ENABLED = import.meta.env.VITE_ENABLE_KAKAO_LOGIN === 'true';
+
+/**
+ * 카카오 OAuth 로그인 (리다이렉트 방식).
+ * 설정: Kakao Developers 앱 → 카카오 로그인 ON, Client Secret 발급,
+ * Redirect URI에 `<Supabase URL>/auth/v1/callback` 등록 → Supabase Auth Providers에서 Kakao 활성화.
+ */
+export async function signInWithKakao(): Promise<void> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'kakao',
+    options: {
+      redirectTo: window.location.origin,
+    },
+  });
+  if (error) throw error;
+}
+
 export async function signInWithMagicLink(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
