@@ -1,0 +1,31 @@
+# 온퇴근 경량판 — HTTPS 인증서는 Caddy 가 자동 발급/갱신
+#   {$APP_DOMAIN} → 앱 화면, {$AI_DOMAIN} → AI 서버
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+	root * /srv/web
+	try_files {path} /index.html
+	file_server
+
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	@html path / /index.html /sw.js /manifest.webmanifest
+	header @html Cache-Control "no-cache"
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-server
+	}
+}
+
+www.{$APP_DOMAIN} {
+	redir https://{$APP_DOMAIN}{uri} permanent
+}
+
+{$AI_DOMAIN} {
+	reverse_proxy ai:8000
+	header -server
+}

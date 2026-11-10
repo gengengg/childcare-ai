@@ -1,0 +1,40 @@
+# 온퇴근 경량판 (네이버클라우드 Micro 1GB 용)
+#   - 로그인·DB·파일: Supabase 클라우드(무료)를 그대로 사용
+#   - 이 서버: 앱 화면(정적 파일) + AI 서버 + HTTPS(Caddy)
+# 실행: /opt/ontoegeun/app/infra/lite 에서 docker compose up -d
+
+services:
+  caddy:
+    image: caddy:2
+    container_name: ontoegeun-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      AI_DOMAIN: ${AI_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../../web/dist:/srv/web:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - ai
+    mem_limit: 128m
+
+  ai:
+    container_name: ontoegeun-ai
+    build:
+      context: ../../backend
+    restart: unless-stopped
+    env_file:
+      - ../../backend/.env
+    expose:
+      - "8000"
+    mem_limit: 384m
+
+volumes:
+  caddy_data:
+  caddy_config:
