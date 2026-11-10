@@ -42,6 +42,14 @@ export default {
         serif: ['"Noto Serif KR"', 'serif'],
       },
       keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        sheetUp: {
+          '0%': { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
         toastLife: {
           '0%':   { opacity: '0', transform: 'translateY(8px)' },
           '15%':  { opacity: '1', transform: 'translateY(0)' },
@@ -51,6 +59,8 @@ export default {
       },
       animation: {
         'toast-life': 'toastLife 1800ms ease forwards',
+        'fade-in': 'fadeIn 180ms ease-out',
+        'sheet-up': 'sheetUp 240ms cubic-bezier(0.2, 0.8, 0.2, 1)',
       },
       borderRadius: {
         card: '24px',

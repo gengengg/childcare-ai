@@ -6,7 +6,6 @@ import { Chip } from '@/components/Chip';
 import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
 import {
-  CalendarIcon,
   CameraIcon,
   CheckIcon,
   CopyIcon,
@@ -50,6 +49,7 @@ import {
 } from '@/lib/settings';
 import { Walkthrough, type TourStep } from '@/components/Walkthrough';
 import { BrandMark } from '@/components/BrandMark';
+import { useCreateSheet } from '@/layout/CreateSheet';
 import { hasSeenTour, markTourSeen } from '@/lib/tour';
 import { getGivenName, personalizeText } from '@/lib/personalize';
 
@@ -82,7 +82,7 @@ const COMMON_DIRECTIVE =
 type ShortcutProps = {
   icon: React.ReactNode;
   label: string;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 };
 
 function Shortcut({
@@ -141,6 +141,16 @@ const TOUR_STEPS: TourStep[] = [
     ),
   },
   {
+    selector: '[data-tour="tab-write"]',
+    title: '작성',
+    description: (
+      <>
+        <strong>꾹 누르면</strong> 알림장 말고도 <strong>관찰일지·주간보육일지·오늘 활동 내용</strong>을
+        바로 고를 수 있어요. 위의 <strong>다른 문서</strong> 버튼으로도 열려요.
+      </>
+    ),
+  },
+  {
     selector: '[data-tour="tab-records"]',
     title: '보관함',
     description: (
@@ -174,6 +184,7 @@ const TOUR_STEPS: TourStep[] = [
 
 export function WriteScreen() {
   const navigate = useNavigate();
+  const { open: openCreateSheet } = useCreateSheet();
   const toast = useToast();
   const draftRef = useRef<HTMLDivElement | null>(null);
 
@@ -644,9 +655,10 @@ export function WriteScreen() {
           tourKey="observation"
         />
         <Shortcut
-          icon={<CalendarIcon size={20} />}
-          label="달력"
-          onClick={() => navigate('/calendar')}
+          icon={<PlusIcon size={20} />}
+          label="다른 문서"
+          onClick={(e) => openCreateSheet(e.currentTarget)}
+          tourKey="create-sheet"
         />
       </div>
 
