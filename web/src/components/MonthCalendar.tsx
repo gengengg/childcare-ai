@@ -54,7 +54,7 @@ export function MonthCalendar({ value, onChange, markedDates }: Props) {
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={() => changeMonth(-1)}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-clay-700 active:bg-cream-100"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-gray-700 active:bg-gray-100"
           aria-label="이전 달"
         >
           <ChevronLeftIcon />
@@ -64,14 +64,14 @@ export function MonthCalendar({ value, onChange, markedDates }: Props) {
         </div>
         <button
           onClick={() => changeMonth(1)}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-clay-700 active:bg-cream-100"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-gray-700 active:bg-gray-100"
           aria-label="다음 달"
         >
           <ChevronRightIcon />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-[12px] font-bold text-subtle mb-1">
+      <div className="grid grid-cols-7 gap-1 text-center text-[14px] font-bold text-subtle mb-1">
         {['일', '월', '화', '수', '목', '금', '토'].map((w, i) => (
           <div key={w} className={clsx(i === 0 && 'text-red-400', i === 6 && 'text-blue-400')}>
             {w}
@@ -93,19 +93,19 @@ export function MonthCalendar({ value, onChange, markedDates }: Props) {
               key={i}
               onClick={() => onChange(key)}
               className={clsx(
-                'h-11 rounded-xl flex flex-col items-center justify-center text-[14px] font-semibold transition',
+                'h-11 rounded-xl flex flex-col items-center justify-center text-[15px] font-semibold transition',
                 isSelected
-                  ? 'bg-clay-500 text-white shadow-pop'
+                  ? 'bg-brand-500 text-on-brand shadow-pop'
                   : isToday
-                  ? 'bg-cream-200 text-clay-800'
-                  : 'text-ink hover:bg-cream-100',
+                  ? 'bg-gray-200 text-ink'
+                  : 'text-ink hover:bg-gray-100',
                 !isSelected && dow === 0 && 'text-red-500',
                 !isSelected && dow === 6 && 'text-blue-500'
               )}
             >
               <span>{d}</span>
               {isMarked && !isSelected && (
-                <span className="w-1 h-1 rounded-full bg-clay-500 mt-0.5" />
+                <span className="w-1 h-1 rounded-full bg-brand-500 mt-0.5" />
               )}
               {isMarked && isSelected && (
                 <span className="w-1 h-1 rounded-full bg-white mt-0.5" />

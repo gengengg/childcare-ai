@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon } from './icons';
 
 type HeaderProps = {
-  icon?: React.ReactNode;
-  iconTone?: 'brown' | 'cream';
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
@@ -12,49 +10,30 @@ type HeaderProps = {
   className?: string;
 };
 
-export function Header({
-  icon,
-  iconTone = 'brown',
-  title,
-  subtitle,
-  action,
-  back,
-  className,
-}: HeaderProps) {
+/** 화면 상단 제목. 큰 제목 + 연한 보조 설명, 오른쪽에 액션. */
+export function Header({ title, subtitle, action, back, className }: HeaderProps) {
   const navigate = useNavigate();
   return (
-    <div className={clsx('flex items-center gap-3 pt-2 pb-4', className)}>
+    <div className={clsx('pt-2 pb-5', className)}>
       {back && (
         <button
           type="button"
           onClick={() => navigate(-1)}
-          aria-label="뒤로"
-          className="w-9 h-9 -ml-2 rounded-full flex items-center justify-center text-clay-700 active:bg-cream-100"
+          aria-label="뒤로 가기"
+          className="w-11 h-11 -ml-3 mb-1 rounded-full flex items-center justify-center text-ink active:bg-gray-200"
         >
-          <ChevronLeftIcon />
+          <ChevronLeftIcon size={26} />
         </button>
       )}
-      {icon && (
-        <div
-          className={clsx(
-            'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0',
-            iconTone === 'brown'
-              ? 'bg-clay-500 text-white shadow-pop'
-              : 'bg-cream-200 text-clay-700'
+      <div className="flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-[26px] font-bold tracking-tight text-ink leading-tight">{title}</h1>
+          {subtitle && (
+            <p className="text-[15px] text-subtle mt-1 leading-snug">{subtitle}</p>
           )}
-        >
-          {icon}
         </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <h1 className="text-[22px] font-extrabold tracking-tight text-ink leading-tight">
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="text-[13px] text-subtle mt-0.5 leading-snug">{subtitle}</p>
-        )}
+        {action}
       </div>
-      {action}
     </div>
   );
 }

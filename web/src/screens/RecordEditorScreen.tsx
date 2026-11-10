@@ -8,7 +8,6 @@ import {
   CameraIcon,
   CheckIcon,
   CopyIcon,
-  PencilIcon,
   PlusIcon,
   SparkleIcon,
   TrashIcon,
@@ -240,7 +239,6 @@ export function RecordEditorScreen() {
     <>
       <Header
         back
-        icon={<PencilIcon />}
         title={`${displayName || '알림장'} 편집`}
         subtitle={`${date} · ${child?.className ?? ''}`}
       />
@@ -248,9 +246,9 @@ export function RecordEditorScreen() {
       <Card className="mb-4" hint="오늘 무엇을 했나요?">
         <div className="space-y-4">
           {activities.map((act, index) => (
-            <div key={act.id} className="rounded-2xl border border-cream-200 p-4 bg-cream-50/60">
+            <div key={act.id} className="rounded-2xl border border-gray-200 p-4 bg-gray-50/60">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[13px] font-bold text-clay-700">활동 {index + 1}</span>
+                <span className="text-[14px] font-bold text-gray-700">활동 {index + 1}</span>
                 {activities.length > 1 && (
                   <button onClick={() => remove(act.id)} className="text-subtle hover:text-red-500 p-1">
                     <TrashIcon size={18} />
@@ -273,7 +271,7 @@ export function RecordEditorScreen() {
           ))}
           <button
             onClick={add}
-            className="w-full rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600 hover:bg-cream-100 flex items-center justify-center gap-1.5"
+            className="w-full rounded-2xl border border-dashed border-gray-300 py-3.5 text-[15px] font-semibold text-gray-600 hover:bg-gray-100 flex items-center justify-center gap-1.5"
           >
             <PlusIcon size={18} /> 활동 추가하기
           </button>
@@ -292,11 +290,11 @@ export function RecordEditorScreen() {
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-700 hover:bg-cream-100 flex items-center justify-center gap-2"
+              className="w-full rounded-2xl border border-dashed border-gray-300 py-3.5 text-[15px] font-semibold text-gray-700 hover:bg-gray-100 flex items-center justify-center gap-2"
             >
               <CameraIcon size={18} /> 사진 넣기
             </button>
-            <p className="text-[11px] text-subtle text-center mt-1.5">
+            <p className="text-[13px] text-subtle text-center mt-1.5">
               사진은 AI 초안 만들기에만 쓰이고 저장되지 않아요.
             </p>
             {photos.length > 0 && (
@@ -305,12 +303,12 @@ export function RecordEditorScreen() {
                   <div key={i} className="relative aspect-square">
                     <img
                       src={src}
-                      className="w-full h-full object-cover rounded-xl border border-cream-200"
+                      className="w-full h-full object-cover rounded-xl border border-gray-200"
                       alt=""
                     />
                     <button
                       onClick={() => setPhotos((p) => p.filter((_, idx) => idx !== i))}
-                      className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center shadow"
+                      className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-ink text-surface flex items-center justify-center shadow"
                     >
                       <XIcon size={12} />
                     </button>
@@ -344,7 +342,7 @@ export function RecordEditorScreen() {
         <div ref={draftRef}>
           <Card className="mb-4" hint="최종 알림장">
             <textarea
-              className="field-textarea min-h-[300px] text-[15px] leading-7"
+              className="field-textarea min-h-[300px] text-[16px] leading-7"
               value={teacherFinal}
               onChange={(e) => {
                 setTeacherFinal(e.target.value);

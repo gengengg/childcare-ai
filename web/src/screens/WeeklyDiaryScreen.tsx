@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/Card';
 import { Header } from '@/components/Header';
 import { useToast } from '@/components/Toast';
-import { CalendarIcon, SparkleIcon } from '@/components/icons';
+import { SparkleIcon } from '@/components/icons';
 import { getMonthlyPlan, type MonthlyPlan } from '@/lib/monthlyPlans';
 import {
   WEEK_DAYS,
@@ -313,7 +313,7 @@ export function WeeklyDiaryScreen() {
   if (loading) {
     return (
       <>
-        <Header back icon={<CalendarIcon />} title="주간보육일지" />
+        <Header back title="주간보육일지" />
         <p className="text-center text-subtle py-10">불러오는 중…</p>
       </>
     );
@@ -323,7 +323,6 @@ export function WeeklyDiaryScreen() {
     <>
       <Header
         back
-        icon={<CalendarIcon />}
         title={`${month}월 ${weekNumber}주 주간보육일지`}
         subtitle={className ? `${className} · ${year}년` : `${year}년`}
       />
@@ -370,12 +369,12 @@ export function WeeklyDiaryScreen() {
       </Card>
 
       {/* 액션 3종 + 요일 바로가기 — 스크롤 시 상단 고정 */}
-      <div className="sticky top-0 z-30 -mx-5 px-5 pt-3 pb-2 mb-3 bg-cream-50/95 backdrop-blur border-b border-cream-200">
+      <div className="sticky top-0 z-30 -mx-4 px-4 pt-3 pb-2 mb-3 bg-page/95 backdrop-blur border-b border-gray-200">
         <div className="grid grid-cols-2 gap-2 mb-2">
           <button
             onClick={handleAutoDistribute}
             disabled={distributing}
-            className="py-2 rounded-xl bg-cream-100 text-ink text-[12px] font-semibold hover:bg-cream-200 disabled:opacity-50 flex items-center justify-center gap-1"
+            className="py-2 rounded-xl bg-gray-100 text-ink text-[14px] font-semibold hover:bg-gray-200 disabled:opacity-50 flex items-center justify-center gap-1"
           >
             <SparkleIcon size={12} />
             {distributing ? '배분 중…' : '월간계획안 자동 배분'}
@@ -383,7 +382,7 @@ export function WeeklyDiaryScreen() {
           <button
             onClick={handleLoadFromRecords}
             disabled={loadingFromRecords}
-            className="py-2 rounded-xl bg-cream-100 text-ink text-[12px] font-semibold hover:bg-cream-200 disabled:opacity-50 flex items-center justify-center gap-1"
+            className="py-2 rounded-xl bg-gray-100 text-ink text-[14px] font-semibold hover:bg-gray-200 disabled:opacity-50 flex items-center justify-center gap-1"
           >
             <SparkleIcon size={12} />
             {loadingFromRecords ? '불러오는 중…' : '알림장에서 활동 불러오기'}
@@ -391,7 +390,7 @@ export function WeeklyDiaryScreen() {
           <button
             onClick={handleGenerateEvaluations}
             disabled={generatingEval}
-            className="py-2 rounded-xl bg-clay-500/10 text-clay-700 text-[12px] font-semibold hover:bg-clay-500/20 disabled:opacity-50 flex items-center justify-center gap-1"
+            className="py-2 rounded-xl bg-brand-500/10 text-gray-700 text-[14px] font-semibold hover:bg-brand-500/20 disabled:opacity-50 flex items-center justify-center gap-1"
           >
             <SparkleIcon size={12} />
             {generatingEval ? '생성 중…' : '총평 AI 자동 생성'}
@@ -399,7 +398,7 @@ export function WeeklyDiaryScreen() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="py-2 rounded-xl bg-clay-500 text-white text-[12px] font-bold hover:bg-clay-600 disabled:opacity-50 flex items-center justify-center gap-1"
+            className="py-2 rounded-xl bg-brand-500 text-on-brand text-[14px] font-bold hover:bg-brand-600 disabled:opacity-50 flex items-center justify-center gap-1"
           >
             {saving ? '저장 중…' : '주간일지 저장'}
           </button>
@@ -413,7 +412,7 @@ export function WeeklyDiaryScreen() {
                   .getElementById(`day-${day}`)
                   ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
-              className="flex-1 min-w-[44px] py-1.5 rounded-xl bg-surface border border-cream-200 text-[13px] font-bold text-clay-700 hover:bg-clay-500 hover:text-white hover:border-clay-500 transition"
+              className="flex-1 min-w-[44px] py-1.5 rounded-xl bg-surface border border-gray-200 text-[14px] font-bold text-gray-700 hover:bg-brand-500 hover:text-on-brand hover:border-brand-500 transition"
             >
               {day}
             </button>
@@ -429,44 +428,44 @@ export function WeeklyDiaryScreen() {
           <Card className="mb-4" hint={`${day}요일 · ${date}`}>
             <div className="space-y-3">
               <div>
-                <p className="text-[11px] font-semibold text-subtle mb-1">
+                <p className="text-[13px] font-semibold text-subtle mb-1">
                   오전 자유놀이 (09:30~10:30)
                 </p>
                 <textarea
-                  className="field-textarea min-h-[54px] text-[13px]"
+                  className="field-textarea min-h-[54px] text-[14px]"
                   placeholder="예: 동물 이름에 끼적여요"
                   value={slots.morningFree}
                   onChange={(e) => updateSlot(day, 'morningFree', e.target.value)}
                 />
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-subtle mb-1">
+                <p className="text-[13px] font-semibold text-subtle mb-1">
                   실외놀이 및 대체활동 (10:30~11:40)
                 </p>
                 <textarea
-                  className="field-textarea min-h-[54px] text-[13px]"
+                  className="field-textarea min-h-[54px] text-[14px]"
                   placeholder="예: (바깥놀이) 자연물로 동물 만들기"
                   value={slots.outdoor}
                   onChange={(e) => updateSlot(day, 'outdoor', e.target.value)}
                 />
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-subtle mb-1">
+                <p className="text-[13px] font-semibold text-subtle mb-1">
                   특별활동 (12:10~12:40)
                 </p>
                 <input
-                  className="field-input text-[13px]"
+                  className="field-input text-[14px]"
                   placeholder="예: 오감놀이 / 영어 / 체육"
                   value={slots.special}
                   onChange={(e) => updateSlot(day, 'special', e.target.value)}
                 />
               </div>
-              <div className="pt-2 border-t border-cream-200">
-                <p className="text-[11px] font-semibold text-subtle mb-1">
+              <div className="pt-2 border-t border-gray-200">
+                <p className="text-[13px] font-semibold text-subtle mb-1">
                   총평 및 활동평가
                 </p>
                 <textarea
-                  className="field-textarea min-h-[110px] text-[13px]"
+                  className="field-textarea min-h-[110px] text-[14px]"
                   placeholder={`${day}요일 관찰 서술 (AI 자동 생성 가능)`}
                   value={evaluations[day] ?? ''}
                   onChange={(e) => updateEval(day, e.target.value)}
@@ -491,17 +490,17 @@ export function WeeklyDiaryScreen() {
           }
           setShowSaturday((v) => !v);
         }}
-        className="w-full mb-4 py-3 rounded-2xl border border-dashed border-cream-300 text-[13px] font-semibold text-clay-600 hover:bg-cream-100"
+        className="w-full mb-4 py-3 rounded-2xl border border-dashed border-gray-300 text-[14px] font-semibold text-gray-600 hover:bg-gray-100"
       >
         {showSaturday ? '토요일 숨기기' : '+ 토요일 추가'}
       </button>
 
       <details className="mb-4">
-        <summary className="text-[12px] text-subtle cursor-pointer py-2 px-1">
+        <summary className="text-[14px] text-subtle cursor-pointer py-2 px-1">
           매일 반복되는 표준 시간대 (참고, 저장 안 됨)
         </summary>
         <Card className="mt-2">
-          <ul className="space-y-1.5 text-[12px] text-subtle">
+          <ul className="space-y-1.5 text-[14px] text-subtle">
             {STD_SLOTS.map((s) => (
               <li key={s.key}>
                 <span className="font-semibold text-ink">{s.key}</span> · {s.time}
@@ -515,7 +514,7 @@ export function WeeklyDiaryScreen() {
         <button
           onClick={handleExportDocx}
           disabled={exporting}
-          className="w-full py-4 rounded-2xl border border-clay-500/40 bg-surface text-clay-700 text-[14px] font-semibold hover:bg-clay-500/5 disabled:opacity-50"
+          className="w-full py-4 rounded-2xl border border-brand-500/40 bg-surface text-gray-700 text-[15px] font-semibold hover:bg-brand-500/5 disabled:opacity-50"
         >
           {exporting ? '생성 중…' : 'DOCX 다운로드'}
         </button>

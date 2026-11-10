@@ -5,7 +5,7 @@ import { Chip } from '@/components/Chip';
 import { Header } from '@/components/Header';
 import { useToast } from '@/components/Toast';
 import { CalendarIcon, CopyIcon, FolderIcon, TrashIcon } from '@/components/icons';
-import { Mascot } from '@/components/Mascot';
+import { BrandMark } from '@/components/BrandMark';
 import { SkeletonListItem } from '@/components/Skeleton';
 import {
   deleteDailyRecord,
@@ -175,14 +175,13 @@ export function RecordsScreen() {
   return (
     <>
       <Header
-        icon={<FolderIcon />}
         title="보관함"
         subtitle="저장된 알림장을 다시 볼 수 있어요"
         action={
           <button
             onClick={() => navigate('/calendar')}
             aria-label="달력 보기"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-clay-700 active:bg-cream-100"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-gray-700 active:bg-gray-100"
           >
             <CalendarIcon />
           </button>
@@ -229,7 +228,7 @@ export function RecordsScreen() {
       {filter === ARCHIVE_FILTER && archivedChildId && (
         <button
           onClick={() => setArchivedChildId('')}
-          className="text-[13px] font-semibold text-clay-700 mb-3 inline-flex items-center gap-1"
+          className="text-[14px] font-semibold text-gray-700 mb-3 inline-flex items-center gap-1"
         >
           ← 보관 폴더 목록
         </button>
@@ -245,13 +244,13 @@ export function RecordsScreen() {
         archivedByChild.length === 0 ? (
           <Card>
             <div className="flex flex-col items-center py-8">
-              <Mascot variant="sleep" size={80} className="mb-3" />
+              <BrandMark tone="muted" size={80} className="mb-3" />
               <p className="text-center text-subtle">보관된 알림장이 없어요.</p>
             </div>
           </Card>
         ) : (
           <Card>
-            <div className="text-[12px] text-subtle mb-3 px-1">
+            <div className="text-[14px] text-subtle mb-3 px-1">
               아이 목록에서 삭제된 알림장이에요.
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -263,18 +262,18 @@ export function RecordsScreen() {
                       setOpenId(null);
                     }}
                     className="w-full flex flex-col items-center gap-2 py-5 rounded-2xl
-                      bg-cream-50 border border-cream-200 text-clay-700
-                      active:bg-cream-100 transition"
+                      bg-gray-50 border border-gray-200 text-gray-700
+                      active:bg-gray-100 transition"
                   >
                     <FolderIcon size={26} />
-                    <div className="text-[14px] font-bold text-ink">{c.name}</div>
-                    <div className="text-[11px] text-subtle">알림장 {c.count}개</div>
+                    <div className="text-[15px] font-bold text-ink">{c.name}</div>
+                    <div className="text-[13px] text-subtle">알림장 {c.count}개</div>
                   </button>
                   <button
                     onClick={(e) => handleClearArchiveFolder(e, c)}
                     aria-label={`${c.name} 폴더 비우기`}
                     className="absolute top-2 right-2 w-7 h-7 rounded-full
-                      bg-surface/80 border border-cream-200 text-subtle
+                      bg-surface/80 border border-gray-200 text-subtle
                       flex items-center justify-center
                       hover:text-red-500 hover:border-red-300 active:bg-red-50 transition"
                   >
@@ -288,7 +287,7 @@ export function RecordsScreen() {
       ) : groupedByDate.length === 0 ? (
         <Card>
           <div className="flex flex-col items-center py-8">
-            <Mascot variant="sleep" size={80} className="mb-3" />
+            <BrandMark tone="muted" size={80} className="mb-3" />
             <p className="text-center text-subtle">아직 저장된 알림장이 없어요.</p>
           </div>
         </Card>
@@ -296,7 +295,7 @@ export function RecordsScreen() {
         <div className="space-y-5">
           {groupedByDate.map(([date, list]) => (
             <div key={date}>
-              <div className="text-[13px] font-bold text-clay-700 mb-2 px-1">
+              <div className="text-[14px] font-bold text-gray-700 mb-2 px-1">
                 {formatDate(date)}
               </div>
               <div className="space-y-2">
@@ -309,19 +308,19 @@ export function RecordsScreen() {
                         className="w-full text-left"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-cream-200 text-clay-700 flex items-center justify-center font-bold">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold">
                             {displayName(r).slice(0, 1) || '?'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-[15px] font-bold text-ink truncate">
+                            <div className="text-[16px] font-bold text-ink truncate">
                               {displayName(r)}
                             </div>
-                            <div className="text-[12px] text-subtle truncate">
+                            <div className="text-[14px] text-subtle truncate">
                               {r.className && `${r.className} · `}
                               {(r.teacherFinal || r.aiDraft).slice(0, 40)}
                             </div>
                           </div>
-                          <span className="text-[12px] text-subtle shrink-0">
+                          <span className="text-[14px] text-subtle shrink-0">
                             {isOpen ? '접기' : '보기'}
                           </span>
                         </div>
@@ -336,12 +335,12 @@ export function RecordsScreen() {
                                   key={i}
                                   src={p}
                                   alt=""
-                                  className="w-24 h-24 rounded-xl object-cover border border-cream-200 shrink-0"
+                                  className="w-24 h-24 rounded-xl object-cover border border-gray-200 shrink-0"
                                 />
                               ))}
                             </div>
                           )}
-                          <div className="whitespace-pre-wrap text-[14px] leading-6 text-ink bg-cream-50 border border-cream-200 rounded-2xl p-4">
+                          <div className="whitespace-pre-wrap text-[15px] leading-6 text-ink bg-gray-50 border border-gray-200 rounded-2xl p-4">
                             {r.teacherFinal || r.aiDraft || '내용 없음'}
                           </div>
                           <div className="grid grid-cols-2 gap-2">

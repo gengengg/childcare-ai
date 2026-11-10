@@ -76,7 +76,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }, [loading, mode, user, loc.pathname, nav]);
 
   if (loading || !ready) {
-    return <div className="min-h-full bg-cream-50" />;
+    return <div className="min-h-full bg-page" />;
   }
   return <>{children}</>;
 }

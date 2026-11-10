@@ -44,10 +44,10 @@ export function FindPasswordScreen() {
   return (
     <div className="min-h-full flex flex-col justify-between py-8 px-6">
       <div className="pt-8">
-        <div className="w-14 h-14 rounded-3xl bg-clay-500 text-white flex items-center justify-center shadow-pop mb-5">
+        <div className="w-14 h-14 rounded-3xl bg-brand-500 text-on-brand flex items-center justify-center shadow-pop mb-5">
           <SparkleIcon size={26} />
         </div>
-        <p className="text-[13px] font-bold text-clay-500 tracking-wide mb-2">
+        <p className="text-[14px] font-bold text-brand-600 tracking-wide mb-2">
           비밀번호 재설정
         </p>
         <h1 className="text-[24px] font-extrabold text-ink leading-tight mb-3">
@@ -55,7 +55,7 @@ export function FindPasswordScreen() {
           <br />
           링크를 보내드려요
         </h1>
-        <p className="text-[13px] text-subtle leading-relaxed">
+        <p className="text-[14px] text-subtle leading-relaxed">
           가입한 이메일 주소를 입력하시면, 새 비밀번호를 설정할 수 있는 링크를 보내드립니다.
         </p>
       </div>
@@ -83,7 +83,7 @@ export function FindPasswordScreen() {
         <div className="pt-2 text-center">
           <Link
             to="/login"
-            className="text-[13px] text-subtle underline underline-offset-4"
+            className="text-[14px] text-subtle underline underline-offset-4"
           >
             로그인 화면으로
           </Link>

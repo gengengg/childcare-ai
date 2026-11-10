@@ -28,7 +28,7 @@ export function applyThemePref(t: ThemePref): void {
   root.classList.toggle('dark', dark);
   // status bar / mobile theme color
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (meta) meta.content = dark ? '#0F0F12' : '#F9FAFB';
+  if (meta) meta.content = dark ? '#17191C' : '#F2F4F6';
 }
 
 /**

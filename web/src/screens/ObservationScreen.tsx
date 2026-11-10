@@ -191,7 +191,6 @@ export function ObservationScreen() {
       <>
         <Header
           back
-          icon={<SparkleIcon />}
           title="관찰일지 편집"
           subtitle={`${selectedChild?.name} · ${recordCount}개 보육일지 기반`}
         />
@@ -206,7 +205,7 @@ export function ObservationScreen() {
         <Card className="mb-4" hint="문서 정보">
           <div className="space-y-3">
             <div>
-              <div className="text-[13px] font-semibold text-clay-700 mb-2">학기</div>
+              <div className="text-[14px] font-semibold text-gray-700 mb-2">학기</div>
               <Segmented
                 value={String(semester) as '1' | '2'}
                 onChange={(v) => setSemester(Number(v) as 1 | 2)}
@@ -263,7 +262,6 @@ export function ObservationScreen() {
     <>
       <Header
         back
-        icon={<SparkleIcon />}
         title="관찰일지 만들기"
         subtitle="기간과 아이를 고르면 AI가 영역별로 정리해줘요"
       />
@@ -287,7 +285,7 @@ export function ObservationScreen() {
       </Card>
 
       <Card className="mb-4" hint="아이 관찰 메모 (선택)">
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           이 아이에 대해 관찰한 내용을 적어두면 관찰일지에 반영돼요.
         </p>
         <textarea
@@ -312,13 +310,13 @@ export function ObservationScreen() {
             className={
               'rounded-2xl border p-3 text-left transition ' +
               (calTarget === 'start'
-                ? 'border-clay-500 bg-clay-500/10'
-                : 'border-cream-200 bg-cream-50')
+                ? 'border-brand-500 bg-brand-500/10'
+                : 'border-gray-200 bg-gray-50')
             }
           >
-            <div className="text-[11px] text-subtle font-semibold">시작일</div>
-            <div className="text-[15px] font-bold text-ink flex items-center gap-1.5">
-              <CalendarIcon size={14} className="text-clay-500" />
+            <div className="text-[13px] text-subtle font-semibold">시작일</div>
+            <div className="text-[16px] font-bold text-ink flex items-center gap-1.5">
+              <CalendarIcon size={14} className="text-brand-600" />
               {startDate || '선택'}
             </div>
           </button>
@@ -327,21 +325,21 @@ export function ObservationScreen() {
             className={
               'rounded-2xl border p-3 text-left transition ' +
               (calTarget === 'end'
-                ? 'border-clay-500 bg-clay-500/10'
-                : 'border-cream-200 bg-cream-50')
+                ? 'border-brand-500 bg-brand-500/10'
+                : 'border-gray-200 bg-gray-50')
             }
           >
-            <div className="text-[11px] text-subtle font-semibold">종료일</div>
-            <div className="text-[15px] font-bold text-ink flex items-center gap-1.5">
-              <CalendarIcon size={14} className="text-clay-500" />
+            <div className="text-[13px] text-subtle font-semibold">종료일</div>
+            <div className="text-[16px] font-bold text-ink flex items-center gap-1.5">
+              <CalendarIcon size={14} className="text-brand-600" />
               {endDate || '선택'}
             </div>
           </button>
         </div>
 
         {calTarget && (
-          <div className="mt-3 border-t border-cream-200 pt-3">
-            <p className="text-[12px] font-semibold text-clay-700 mb-2 text-center">
+          <div className="mt-3 border-t border-gray-200 pt-3">
+            <p className="text-[14px] font-semibold text-gray-700 mb-2 text-center">
               {calTarget === 'start' ? '시작일' : '종료일'}을 선택하세요
             </p>
             <MonthCalendar
@@ -372,7 +370,7 @@ export function ObservationScreen() {
         <SparkleIcon size={18} />
         {isGenerating ? 'AI가 관찰일지를 정리 중…' : 'AI 관찰일지 생성하기'}
       </button>
-      <p className="text-center text-[12px] text-subtle">
+      <p className="text-center text-[14px] text-subtle">
         생성 후 각 영역 내용을 수정하고 docx로 저장할 수 있어요.
       </p>
     </>

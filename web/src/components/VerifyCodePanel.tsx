@@ -76,10 +76,10 @@ export function VerifyCodePanel({
   return (
     <div className="min-h-full flex flex-col justify-center py-8 px-6">
       <div className="card">
-        <p className="text-[14px] font-bold text-ink mb-2">
+        <p className="text-[15px] font-bold text-ink mb-2">
           이메일로 온 확인 코드를 입력해 주세요
         </p>
-        <p className="text-[13px] text-subtle leading-relaxed mb-4">
+        <p className="text-[14px] text-subtle leading-relaxed mb-4">
           <span className="font-medium text-ink">{email}</span> 로 확인 코드를 보냈어요.
           다른 기기에서 메일을 확인해도, 코드만 여기 입력하면 이 기기에서 진행됩니다.
         </p>
@@ -106,7 +106,7 @@ export function VerifyCodePanel({
           <SparkleIcon size={16} />
           {busy ? '확인 중…' : '확인'}
         </button>
-        <div className="flex items-center justify-between mt-4 text-[12px]">
+        <div className="flex items-center justify-between mt-4 text-[14px]">
           <button
             onClick={handleResend}
             disabled={busy}
@@ -122,7 +122,7 @@ export function VerifyCodePanel({
             돌아가기
           </button>
         </div>
-        <p className="text-[11px] text-subtle mt-3 text-center">
+        <p className="text-[13px] text-subtle mt-3 text-center">
           메일이 안 보이면 스팸함도 확인해 보세요.
         </p>
       </div>

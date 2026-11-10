@@ -2,19 +2,19 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.gengg.childcareai',
-  appName: '알림장 AI',
+  appName: '온퇴근',
   webDir: 'dist',
-  backgroundColor: '#FDFAF4',
+  backgroundColor: '#FFFFFF',
   plugins: {
     SplashScreen: {
       launchAutoHide: true,
-      backgroundColor: '#FDFAF4',
+      backgroundColor: '#FFFFFF',
       showSpinner: false,
       androidScaleType: 'CENTER_CROP',
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#FDFAF4',
+      backgroundColor: '#FFFFFF',
     },
     Keyboard: {
       resize: 'body',

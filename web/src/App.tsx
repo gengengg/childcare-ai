@@ -36,6 +36,9 @@ const ManageChildrenScreen = lazy(() =>
 const CalendarScreen = lazy(() =>
   import('./screens/CalendarScreen').then((m) => ({ default: m.CalendarScreen }))
 );
+const MenuScreen = lazy(() =>
+  import('./screens/MenuScreen').then((m) => ({ default: m.MenuScreen }))
+);
 const SettingsScreen = lazy(() =>
   import('./screens/SettingsScreen').then((m) => ({ default: m.SettingsScreen }))
 );
@@ -73,7 +76,7 @@ const WorksheetsScreen = lazy(() =>
 function PageFallback() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="w-8 h-8 rounded-full border-2 border-clay-500 border-t-transparent animate-spin" />
+      <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
     </div>
   );
 }
@@ -105,6 +108,7 @@ export default function App() {
                       <Route path="records" element={<RecordsScreen />} />
                       <Route path="weekly" element={<WeeklyHubScreen />} />
                       <Route path="children" element={<ChildrenScreen />} />
+                      <Route path="menu" element={<MenuScreen />} />
                       <Route path="settings" element={<SettingsScreen />} />
 
                       <Route path="record/:childId" element={<RecordEditorScreen />} />

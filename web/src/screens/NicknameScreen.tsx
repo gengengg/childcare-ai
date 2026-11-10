@@ -47,16 +47,16 @@ export function NicknameScreen() {
   return (
     <div className="min-h-full flex flex-col justify-between py-8 px-6">
       <div className="pt-8">
-        <div className="w-16 h-16 rounded-3xl bg-clay-500 text-white flex items-center justify-center shadow-pop mb-5">
+        <div className="w-16 h-16 rounded-3xl bg-brand-500 text-on-brand flex items-center justify-center shadow-pop mb-5">
           <SmileIcon size={30} />
         </div>
-        <p className="text-[13px] font-bold text-clay-500 tracking-wide mb-2">
+        <p className="text-[14px] font-bold text-brand-600 tracking-wide mb-2">
           첫 방문 환영해요
         </p>
         <h1 className="text-[26px] font-extrabold text-ink leading-tight mb-3">
           어떻게 불러 드릴까요?
         </h1>
-        <p className="text-[14px] text-subtle leading-relaxed">
+        <p className="text-[15px] text-subtle leading-relaxed">
           앱 안에서 이 이름으로 인사드릴게요. 언제든지 설정에서 바꿀 수 있어요.
         </p>
 

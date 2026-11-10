@@ -3,8 +3,8 @@ import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { Header } from '@/components/Header';
 import { useToast } from '@/components/Toast';
-import { PlusIcon, SmileIcon, TrashIcon } from '@/components/icons';
-import { Mascot } from '@/components/Mascot';
+import { PlusIcon, TrashIcon } from '@/components/icons';
+import { BrandMark } from '@/components/BrandMark';
 import { addChild, deleteChild, getChildren, updateChild, type Child } from '@/lib/children';
 import { computeShowClass, getShowClassSetting } from '@/lib/settings';
 
@@ -82,7 +82,6 @@ export function ChildrenScreen() {
   return (
     <>
       <Header
-        icon={<SmileIcon />}
         title="아이들"
         subtitle="반과 나이를 함께 등록해요"
       />
@@ -95,7 +94,7 @@ export function ChildrenScreen() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <p className="text-[11px] text-subtle -mt-1 pl-1">
+          <p className="text-[13px] text-subtle -mt-1 pl-1">
             성을 포함한 전체 이름을 적어주세요. 알림장엔 이름만 자동으로 들어가요.
           </p>
           {showClass && (
@@ -107,7 +106,7 @@ export function ChildrenScreen() {
             />
           )}
           <div>
-            <div className="text-[13px] font-semibold text-clay-700 mb-2">만 나이</div>
+            <div className="text-[14px] font-semibold text-gray-700 mb-2">만 나이</div>
             <div className="flex flex-wrap gap-2">
               {AGES.map((a) => (
                 <Chip key={a} active={age === a} onClick={() => setAge(a)}>
@@ -136,19 +135,19 @@ export function ChildrenScreen() {
       <Card hint={`아이 목록 (${children.length}명)`}>
         {children.length === 0 ? (
           <div className="flex flex-col items-center py-6">
-            <Mascot variant="thinking" size={72} className="mb-3" />
+            <BrandMark size={72} className="mb-3" />
             <p className="text-center text-subtle">아직 등록된 아이가 없어요.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-cream-200">
+          <ul className="divide-y divide-gray-200">
             {children.map((c) => (
               <li key={c.id} className="flex items-center gap-3 py-3">
-                <div className="w-10 h-10 rounded-full bg-cream-200 text-clay-700 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold">
                   {c.name.slice(0, 1)}
                 </div>
                 <button onClick={() => handleEdit(c)} className="flex-1 text-left">
-                  <div className="text-[15px] font-bold text-ink">{c.name}</div>
-                  <div className="text-[12px] text-subtle">
+                  <div className="text-[16px] font-bold text-ink">{c.name}</div>
+                  <div className="text-[14px] text-subtle">
                     {showClass && c.className ? `${c.className} · ` : ''}만 {c.age}세
                   </div>
                 </button>

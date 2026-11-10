@@ -7,79 +7,81 @@
 @layer base {
   :root {
     color-scheme: light;
-    --tap-highlight: rgba(87, 63, 51, 0.08);
+    --tap-highlight: rgba(25, 31, 40, 0.06);
 
     /*
-     * 세련된 라이트 팔레트.
-     * 배경은 살짝 따뜻한 오프화이트, 보더는 뉴트럴 그레이.
-     * clay 는 깊은 에스프레소/모카 톤 액센트 (더 성숙한 브라운).
+     * 온퇴근 라이트 팔레트.
+     * 밝은 회색 페이지 위에 흰 카드, 포인트는 로고 그린.
+     * 텍스트 대비는 WCAG AA(4.5:1) 이상을 기준으로 잡았다.
      */
 
-    /* 뉴트럴 (배경/보더) — 살짝 따뜻한 그레이 */
-    --cream-50: 250 249 246;   /* 페이지 배경 (따뜻한 오프화이트) */
-    --cream-100: 244 242 238;  /* 입력/ghost 버튼 배경 */
-    --cream-200: 230 226 219;  /* 보더 */
-    --cream-300: 205 199 189;  /* 대시 보더, chip 보더 */
-    --cream-400: 152 145 135;  /* 중간 톤 */
-    --cream-500: 108 102 94;   /* 짙은 톤 */
+    /* 중립 회색 */
+    --gray-50: 249 250 251;    /* 카드 안 옅은 면 */
+    --gray-100: 242 244 246;   /* 입력/보조 버튼 배경 */
+    --gray-200: 229 232 235;   /* 보더/구분선 */
+    --gray-300: 209 214 219;   /* 강한 보더 */
+    --gray-400: 139 149 161;   /* 비활성 아이콘 (텍스트로는 쓰지 않기) */
+    --gray-500: 98 108 121;    /* 보조 텍스트 (4.5:1+) */
+    --gray-600: 78 89 104;
+    --gray-700: 51 61 75;      /* 진한 라벨 */
+    --gray-800: 25 31 40;      /* 본문 */
 
-    /* 포인트 컬러 — 깊은 에스프레소 브라운 (더 성숙하고 세련) */
-    --clay-50: 246 240 232;
-    --clay-100: 232 220 204;
-    --clay-200: 208 186 158;
-    --clay-300: 178 148 112;
-    --clay-400: 143 113 82;
-    --clay-500: 108 84 62;     /* 메인 액센트 (기존보다 더 깊음) */
-    --clay-600: 87 66 47;
-    --clay-700: 66 49 35;      /* 강조 텍스트 */
-    --clay-800: 45 33 24;
-    --clay-900: 28 20 15;
+    /* 브랜드 그린 — 로고 #759C08 = 400, 라임 #9FD40B = 300 */
+    --brand-50: 243 248 228;
+    --brand-100: 228 240 194;
+    --brand-200: 201 225 136;
+    --brand-300: 159 212 11;
+    --brand-400: 117 156 8;
+    --brand-500: 91 122 5;     /* 버튼 배경 (흰 글씨 5:1) */
+    --brand-600: 78 107 4;     /* 강조 텍스트/링크 */
+    --brand-700: 61 84 3;
+    --brand-800: 45 62 2;
 
+    --page: 242 244 246;       /* 페이지 배경 */
     --surface: 255 255 255;    /* 카드 배경 */
-    --ink: 30 27 24;           /* 본문 텍스트 (따뜻한 다크) */
-    --subtle: 121 114 105;     /* 보조 텍스트 (따뜻한 그레이) */
+    --ink: 25 31 40;           /* 본문 텍스트 */
+    --subtle: 98 108 121;      /* 보조 텍스트 */
+    --on-brand: 255 255 255;   /* 브랜드 배경 위 글자 */
+    --danger: 220 38 38;
 
-    --shadow-card: 0 1px 2px rgba(66, 49, 35, 0.03),
-      0 10px 30px -14px rgba(66, 49, 35, 0.12);
-    --shadow-pop: 0 8px 24px rgba(108, 84, 62, 0.22);
+    --shadow-card: 0 1px 2px rgba(25, 31, 40, 0.02);
+    --shadow-pop: 0 6px 20px rgba(25, 31, 40, 0.12);
   }
 
   .dark {
     color-scheme: dark;
-    --tap-highlight: rgba(230, 210, 180, 0.08);
+    --tap-highlight: rgba(255, 255, 255, 0.06);
 
-    /*
-     * 다크 팔레트: 라이트의 따뜻한 톤을 유지하되 반전.
-     * 배경은 짙은 브라운 계열, 액센트는 부드러운 크림/샌드.
-     */
+    --gray-50: 42 45 50;
+    --gray-100: 44 47 53;
+    --gray-200: 56 60 67;
+    --gray-300: 78 83 92;
+    --gray-400: 120 128 139;
+    --gray-500: 164 171 181;
+    --gray-600: 190 196 204;
+    --gray-700: 220 224 229;
+    --gray-800: 240 242 244;
 
-    /* 뉴트럴 (배경/보더) — 살짝 따뜻한 다크 브라운 */
-    --cream-50: 22 20 18;      /* 페이지 배경 (짙은 브라운) */
-    --cream-100: 32 29 26;     /* 입력/ghost 배경 */
-    --cream-200: 48 44 40;     /* 보더 */
-    --cream-300: 74 68 62;     /* 대시 보더 */
-    --cream-400: 130 122 112;  /* 중간 톤 */
-    --cream-500: 178 168 155;  /* 밝은 톤 */
+    /* 다크에선 라임을 버튼 배경으로, 글자는 어둡게 */
+    --brand-50: 37 47 18;
+    --brand-100: 50 64 20;
+    --brand-200: 76 100 18;
+    --brand-300: 117 156 8;
+    --brand-400: 140 188 10;
+    --brand-500: 159 212 11;
+    --brand-600: 178 222 70;
+    --brand-700: 204 234 128;
+    --brand-800: 226 244 182;
 
-    /* 포인트 컬러 — 다크에선 밝은 샌드 (라이트의 반전) */
-    --clay-50: 45 36 27;
-    --clay-100: 68 54 39;
-    --clay-200: 108 84 62;
-    --clay-300: 152 120 88;
-    --clay-400: 188 152 118;
-    --clay-500: 214 180 145;   /* 다크 메인 액센트 (밝은 샌드) */
-    --clay-600: 232 208 178;
-    --clay-700: 244 228 202;   /* 강조 텍스트 */
-    --clay-800: 250 240 220;
-    --clay-900: 253 248 232;
+    --page: 23 25 28;
+    --surface: 33 36 40;
+    --ink: 240 242 244;
+    --subtle: 164 171 181;
+    --on-brand: 23 25 28;
+    --danger: 248 113 113;
 
-    --surface: 36 32 28;       /* 카드 배경 (약간 밝은 다크) */
-    --ink: 246 242 236;        /* 본문 텍스트 (거의 흰색, 따뜻함) */
-    --subtle: 168 158 145;     /* 보조 텍스트 */
-
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35),
-      0 12px 32px -14px rgba(0, 0, 0, 0.55);
-    --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.03);
+    --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
   }
 
   html,
@@ -93,7 +95,7 @@
   }
 
   body {
-    @apply bg-cream-50 text-ink font-sans antialiased;
+    @apply bg-page text-ink font-sans antialiased;
     font-feature-settings: 'ss01', 'tnum';
     -webkit-tap-highlight-color: var(--tap-highlight);
     overscroll-behavior-y: none;
@@ -121,79 +123,107 @@
     height: 6px;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgb(var(--clay-500) / 0.35);
+    background: rgb(var(--gray-400) / 0.5);
     border-radius: 999px;
   }
 }
 
+@layer base {
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand-500));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
 @layer components {
+  /* ── 카드 ─────────────────────────────── */
   .card {
-    @apply bg-surface rounded-card shadow-card border border-cream-200/60 p-5;
+    @apply bg-surface rounded-card shadow-card p-5;
   }
 
   .card-hint {
-    @apply text-[16px] font-extrabold text-clay-700 mb-3 tracking-tight;
+    @apply text-[17px] font-bold text-ink mb-3 tracking-tight;
   }
 
-  /* 다크에서는 clay-700이 밝은 크림색이라 hint 컬러가 잘 안 보임. 톤 다운 */
-  .dark .card-hint {
-    @apply text-clay-600;
-  }
-
+  /* ── 입력 ─────────────────────────────── */
   .field-input {
-    @apply w-full bg-cream-100 border border-cream-200 rounded-2xl px-4 py-3 text-[15px] leading-tight
-      focus:outline-none focus:border-clay-400 focus:bg-surface transition text-ink;
+    @apply w-full bg-gray-100 border border-transparent rounded-2xl px-4 py-3.5 text-[16px] leading-tight
+      focus:outline-none focus:border-brand-400 focus:bg-surface transition text-ink;
   }
 
   .field-textarea {
-    @apply w-full bg-cream-100 border border-cream-200 rounded-2xl px-4 py-3 text-[15px] leading-relaxed
-      focus:outline-none focus:border-clay-400 focus:bg-surface transition min-h-[100px] text-ink;
+    @apply w-full bg-gray-100 border border-transparent rounded-2xl px-4 py-3.5 text-[16px] leading-relaxed
+      focus:outline-none focus:border-brand-400 focus:bg-surface transition min-h-[100px] text-ink;
   }
 
+  /* ── 칩 ───────────────────────────────── */
   .chip {
-    @apply inline-flex items-center gap-1 px-3.5 py-1.5 rounded-pill border border-cream-300
-      bg-surface text-[13px] text-clay-700 font-medium transition
+    @apply inline-flex items-center gap-1 min-h-[40px] px-4 py-2 rounded-pill border border-transparent
+      bg-gray-100 text-[15px] text-gray-700 font-semibold transition
       active:scale-[0.97];
   }
 
   @media (hover: hover) {
-    .chip:hover { @apply bg-cream-100; }
+    .chip:hover { @apply bg-gray-200; }
   }
 
-  /* 라이트: 진한 브라운 배경 + 흰 글씨 */
   .chip-active {
-    @apply !bg-clay-700 !text-white !border-clay-700 !font-bold shadow-pop;
+    @apply !bg-brand-500 !text-on-brand !border-brand-500 !font-bold;
   }
 
-  /* 다크: clay-700이 밝은 크림색이라 흰 글씨가 안 보임 → 어두운 액센트 배경 사용 */
-  .dark .chip-active {
-    @apply !bg-clay-500 !text-white !border-clay-500 !font-bold shadow-pop;
-  }
-
+  /* ── 버튼 ─────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 bg-clay-500 text-white
-      rounded-2xl py-3.5 px-5 text-[15px] font-bold shadow-pop
-      active:bg-clay-600 disabled:opacity-50 disabled:shadow-none transition;
+    @apply inline-flex items-center justify-center gap-2 bg-brand-500 text-on-brand
+      rounded-2xl min-h-[56px] py-4 px-5 text-[17px] font-bold
+      active:bg-brand-600 active:scale-[0.99] disabled:opacity-40 transition;
+  }
+
+  /* 연한 그린 배경 + 그린 글씨 (보조 강조) */
+  .btn-tonal {
+    @apply inline-flex items-center justify-center gap-2 bg-brand-50 text-brand-600
+      rounded-2xl min-h-[48px] py-3 px-5 text-[16px] font-bold
+      active:bg-brand-100 disabled:opacity-40 transition;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 bg-cream-100 text-clay-700
-      rounded-2xl py-3 px-5 text-[14px] font-semibold
-      active:bg-cream-200 transition;
+    @apply inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700
+      rounded-2xl min-h-[48px] py-3 px-5 text-[16px] font-semibold
+      active:bg-gray-200 disabled:opacity-40 transition;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 bg-surface text-clay-700
-      rounded-2xl py-3 px-5 text-[14px] font-semibold border border-cream-300
-      active:bg-cream-50 transition;
+    @apply inline-flex items-center justify-center gap-2 bg-surface text-gray-700
+      rounded-2xl min-h-[48px] py-3 px-5 text-[16px] font-semibold border border-gray-200
+      active:bg-gray-50 disabled:opacity-40 transition;
   }
 
+  /* 리스트 오른쪽에 붙는 작은 버튼 (예: "보기") */
+  .btn-pill {
+    @apply inline-flex items-center justify-center bg-gray-100 text-gray-700 rounded-xl
+      min-h-[40px] px-4 text-[15px] font-semibold active:bg-gray-200 transition;
+  }
+
+  .btn-pill-brand {
+    @apply inline-flex items-center justify-center bg-brand-50 text-brand-600 rounded-xl
+      min-h-[40px] px-4 text-[15px] font-bold active:bg-brand-100 transition;
+  }
+
+  /* ── 세그먼트/탭 ──────────────────────── */
   .segmented {
-    @apply grid grid-cols-3 gap-1 p-1 bg-cream-100 rounded-2xl;
+    @apply grid grid-cols-3 gap-1 p-1 bg-gray-100 rounded-2xl;
   }
 
   .segmented-item {
-    @apply text-center py-2.5 rounded-xl text-[14px] text-subtle font-medium transition;
+    @apply text-center min-h-[44px] py-2.5 rounded-xl text-[15px] text-gray-500 font-semibold transition;
   }
 
   .segmented-item-active {
@@ -201,22 +231,49 @@
   }
 
   .section-title {
-    @apply text-[14px] font-bold text-clay-800 mb-3;
+    @apply text-[17px] font-bold text-ink mb-3 tracking-tight;
   }
 
   .tabs {
-    @apply flex gap-1 border-b border-cream-200 -mx-1;
+    @apply flex gap-1 border-b border-gray-200 -mx-1;
   }
 
   .tabs-item {
-    @apply px-4 py-3 text-[14px] font-semibold text-subtle border-b-2 border-transparent
+    @apply px-4 py-3 text-[15px] font-semibold text-gray-500 border-b-2 border-transparent
       transition -mb-px;
   }
 
   .tabs-item-active {
-    @apply text-clay-700 border-clay-500;
+    @apply text-ink border-ink;
   }
-  .dark .tabs-item-active {
-    @apply text-clay-800 border-clay-500;
+
+  /* ── 리스트 (아이콘 + 제목 + 설명 + >) ─── */
+  .list-group {
+    @apply bg-surface rounded-card shadow-card py-2;
+  }
+
+  .list-group-title {
+    @apply px-5 pt-3 pb-1 text-[15px] font-bold text-gray-500;
+  }
+
+  .list-row {
+    @apply w-full flex items-center gap-4 px-5 min-h-[60px] py-3 text-left transition
+      active:bg-gray-100;
+  }
+
+  @media (hover: hover) {
+    .list-row:hover { @apply bg-gray-50; }
+  }
+
+  .list-row-icon {
+    @apply w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gray-100 text-gray-600;
+  }
+
+  .list-row-title {
+    @apply flex-1 min-w-0 text-[17px] font-semibold text-ink tracking-tight;
+  }
+
+  .list-row-desc {
+    @apply text-[14px] text-subtle text-right truncate max-w-[50%];
   }
 }

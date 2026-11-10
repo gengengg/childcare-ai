@@ -149,7 +149,6 @@ export function StyleSetupScreen() {
     <>
       <Header
         back
-        icon={<SparkleIcon />}
         title="문체 설정"
         subtitle={`샘플을 최대 ${MAX_STYLE_SAMPLES}개까지 등록하면 AI가 그 톤으로 써 드려요`}
       />
@@ -157,10 +156,10 @@ export function StyleSetupScreen() {
       <Card className="mb-4" hint="이모티콘 사용">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[14px] text-clay-800 font-semibold">
+            <p className="text-[15px] text-ink font-semibold">
               알림장에 이모지 넣기
             </p>
-            <p className="text-[12px] text-subtle mt-1">
+            <p className="text-[14px] text-subtle mt-1">
               켜면 활동마다 2~3개의 이모지를 자연스럽게 섞어 써요.
             </p>
           </div>
@@ -170,7 +169,7 @@ export function StyleSetupScreen() {
             onClick={toggleEmoji}
             className={
               'shrink-0 w-12 h-7 rounded-full transition relative ' +
-              (emojiOn ? 'bg-clay-500' : 'bg-cream-300')
+              (emojiOn ? 'bg-brand-500' : 'bg-gray-300')
             }
           >
             <span
@@ -184,7 +183,7 @@ export function StyleSetupScreen() {
       </Card>
 
       <Card className="mb-4" hint="반 이름 표시">
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           한 반만 담당하시면 반 이름을 감출 수 있어요. 여러 반을 담당하시면 반 이름을 표시해 알림장을 구분하세요.
         </p>
         <Segmented
@@ -196,7 +195,7 @@ export function StyleSetupScreen() {
             { value: 'on', label: '표시' },
           ]}
         />
-        <p className="text-[11px] text-subtle mt-2">
+        <p className="text-[13px] text-subtle mt-2">
           {classSetting === 'auto'
             ? `현재: ${effectiveShowClass ? '표시 (등록된 반이 2개 이상)' : '숨김 (등록된 반이 하나 이하)'}`
             : classSetting === 'off'
@@ -206,7 +205,7 @@ export function StyleSetupScreen() {
       </Card>
 
       <Card className="mb-4" hint="알림장 텍스트로 추가">
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           평소 학부모에게 보냈던 알림장을 그대로 붙여넣어주세요.
         </p>
         <textarea
@@ -219,14 +218,14 @@ export function StyleSetupScreen() {
         <button
           onClick={addText}
           disabled={samples.length >= MAX_STYLE_SAMPLES}
-          className="w-full rounded-2xl border border-dashed border-cream-300 py-3 text-[14px] font-semibold text-clay-700 hover:bg-cream-100 disabled:opacity-50 flex items-center justify-center gap-1.5"
+          className="w-full rounded-2xl border border-dashed border-gray-300 py-3 text-[15px] font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50 flex items-center justify-center gap-1.5"
         >
           <PlusIcon size={16} /> 텍스트 샘플 추가
         </button>
       </Card>
 
       <Card className="mb-4" hint="이미지로 추가">
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           알림장이 사진·캡처로 있으면 이미지로 첨부해도 돼요. AI가 글자를 읽어 분석해요.
         </p>
         <input
@@ -243,7 +242,7 @@ export function StyleSetupScreen() {
         <button
           onClick={() => fileRef.current?.click()}
           disabled={samples.length >= MAX_STYLE_SAMPLES}
-          className="w-full rounded-2xl bg-cream-100 py-3.5 text-[14px] font-semibold text-clay-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full rounded-2xl bg-gray-100 py-3.5 text-[15px] font-semibold text-gray-700 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <CameraIcon size={18} /> 이미지 첨부 ({remaining}개 남음)
         </button>
@@ -253,21 +252,21 @@ export function StyleSetupScreen() {
         <Card className="mb-4" hint={`등록된 샘플 (${samples.length}/${MAX_STYLE_SAMPLES})`}>
           <ul className="space-y-2">
             {samples.map((s, i) => (
-              <li key={s.id} className="flex items-start gap-3 rounded-2xl border border-cream-200 p-3">
-                <div className="w-7 h-7 rounded-full bg-cream-200 text-clay-700 flex items-center justify-center font-bold text-[13px]">
+              <li key={s.id} className="flex items-start gap-3 rounded-2xl border border-gray-200 p-3">
+                <div className="w-7 h-7 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-[14px]">
                   {i + 1}
                 </div>
                 <div className="flex-1 min-w-0">
                   {s.kind === 'text' ? (
-                    <p className="text-[13px] leading-6 text-ink line-clamp-4">{s.text}</p>
+                    <p className="text-[14px] leading-6 text-ink line-clamp-4">{s.text}</p>
                   ) : (
                     <div className="flex items-center gap-3">
                       <img
                         src={s.uri}
                         alt=""
-                        className="w-14 h-14 rounded-lg object-cover border border-cream-200"
+                        className="w-14 h-14 rounded-lg object-cover border border-gray-200"
                       />
-                      <span className="text-[13px] text-ink">이미지 샘플</span>
+                      <span className="text-[14px] text-ink">이미지 샘플</span>
                     </div>
                   )}
                 </div>
@@ -300,7 +299,7 @@ export function StyleSetupScreen() {
         {fromSettings ? '학습 해제하고 기본 문체 사용' : '건너뛰고 기본 문체 사용'}
       </button>
 
-      <p className="text-center text-[12px] text-subtle mt-4">
+      <p className="text-center text-[14px] text-subtle mt-4">
         표준 보육과정 5영역은 학습 여부와 관계없이 항상 적용돼요.
       </p>
     </>

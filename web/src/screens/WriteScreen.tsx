@@ -12,7 +12,6 @@ import {
   CopyIcon,
   GridIcon,
   NoteIcon,
-  PencilIcon,
   PlusIcon,
   SettingsIcon,
   SparkleIcon,
@@ -50,7 +49,7 @@ import {
   getShowClassSetting,
 } from '@/lib/settings';
 import { Walkthrough, type TourStep } from '@/components/Walkthrough';
-import { Mascot } from '@/components/Mascot';
+import { BrandMark } from '@/components/BrandMark';
 import { hasSeenTour, markTourSeen } from '@/lib/tour';
 import { getGivenName, personalizeText } from '@/lib/personalize';
 
@@ -96,12 +95,13 @@ function Shortcut({
     <button
       onClick={onClick}
       data-tour={tourKey}
-      className="flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl
-        bg-surface border border-cream-200 text-clay-700
-        active:scale-[0.98] active:bg-cream-100 transition"
+      className="flex flex-col items-center justify-center gap-2 py-4 min-h-[96px] rounded-card
+        bg-surface shadow-card active:scale-[0.98] active:bg-gray-100 transition"
     >
-      {icon}
-      <span className="text-[11px] font-bold text-clay-800 leading-tight text-center">
+      <span className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center" aria-hidden>
+        {icon}
+      </span>
+      <span className="text-[15px] font-semibold text-ink leading-tight text-center">
         {label}
       </span>
     </button>
@@ -111,8 +111,7 @@ function Shortcut({
 const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="write-card"]',
-    title: '반가워요! 햄찌예요',
-    mascot: 'wave',
+    title: '반가워요! 온퇴근이에요',
     description: (
       <>
         오늘 뭐 했는지만 적으면 <strong>AI가 초안</strong>을 만들어드려요.
@@ -123,7 +122,6 @@ const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="mode-toggle"]',
     title: '공통 vs 개인',
-    mascot: 'thinking',
     description: (
       <>
         반 전체엔 <strong>공통 알림장</strong>, 아이별로 다르게 쓸 땐{' '}
@@ -135,7 +133,6 @@ const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="class-activity"]',
     title: '오늘 활동 내용',
-    mascot: 'point',
     description: (
       <>
         오늘 반의 활동을 여기에 미리 정리해 두면, 알림장을 쓸 때{' '}
@@ -146,7 +143,6 @@ const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="tab-records"]',
     title: '보관함',
-    mascot: 'point',
     description: (
       <>
         작성한 알림장이 여기 <strong>다 쌓여요</strong>. 전체·공통·
@@ -157,7 +153,6 @@ const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="tab-weekly"]',
     title: '학급',
-    mascot: 'happy',
     description: (
       <>
         <strong>월간계획안(PDF)</strong>만 올리면 <strong>주간보육일지</strong>까지 AI가
@@ -166,24 +161,12 @@ const TOUR_STEPS: TourStep[] = [
     ),
   },
   {
-    selector: '[data-tour="tab-children"]',
-    title: '아이',
-    mascot: 'point',
+    selector: '[data-tour="tab-menu"]',
+    title: '전체',
     description: (
       <>
-        아이 <strong>이름·나이·반</strong>을 등록해두세요. 개인 알림장과 아이별 폴더의 기준이
-        됩니다!
-      </>
-    ),
-  },
-  {
-    selector: '[data-tour="tab-settings"]',
-    title: '설정',
-    mascot: 'happy',
-    description: (
-      <>
-        <strong>문체 학습</strong>, 다크 모드, 튜토리얼 다시 보기까지 여기서 모두 관리할 수
-        있어요!
+        <strong>아이 관리</strong>, <strong>문체 학습</strong>, 다크 모드, 튜토리얼 다시 보기까지
+        모든 메뉴가 여기 모여 있어요!
       </>
     ),
   },
@@ -631,27 +614,20 @@ export function WriteScreen() {
   return (
     <>
       <Header
-        icon={<PencilIcon />}
-        title="알림장"
-        subtitle="사진과 활동만 넣으면 초안이 완성돼요"
+        title="오늘의 알림장"
+        subtitle={formatTodayKorean(selectedDate)}
         action={
           <button
             onClick={() => navigate('/settings')}
             aria-label="설정"
             data-tour="settings"
-            className="w-10 h-10 rounded-full flex items-center justify-center text-clay-700
-              bg-cream-100 active:bg-cream-200 transition"
+            className="w-11 h-11 rounded-full flex items-center justify-center text-gray-600
+              active:bg-gray-200 transition"
           >
-            <SettingsIcon size={20} />
+            <SettingsIcon size={24} />
           </button>
         }
       />
-
-      {/* 오늘 날짜 배지 */}
-      <div className="mb-4 flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-clay-500 text-white text-[14px] font-bold shadow-pop">
-        <CalendarIcon size={16} />
-        <span>오늘 · {formatTodayKorean(selectedDate)} 알림장</span>
-      </div>
 
       {/* 빠른 이동 */}
       <div className="grid grid-cols-3 gap-2 mb-4">
@@ -747,14 +723,14 @@ export function WriteScreen() {
               ))}
             </div>
           )}
-          <p className="text-[12px] text-subtle mt-3 leading-relaxed">
+          <p className="text-[14px] text-subtle mt-3 leading-relaxed">
             공통 알림장은 아이 이름 없이 반 전체를 대상으로 작성돼요.
             같은 활동을 아이들에게 동일하게 보낼 때 편해요.
           </p>
         </Card>
       ) : (
         <Card className="mb-4" hint="공통 알림장">
-          <p className="text-[12px] text-subtle leading-relaxed">
+          <p className="text-[14px] text-subtle leading-relaxed">
             공통 알림장은 아이 이름 없이 반 전체를 대상으로 작성돼요.
             같은 활동을 아이들에게 동일하게 보낼 때 편해요.
           </p>
@@ -770,9 +746,9 @@ export function WriteScreen() {
               <span>오늘 무엇을 했나요?</span>
               <button
                 onClick={handleLoadClassActivities}
-                className="inline-flex items-center gap-1 rounded-pill bg-clay-500/10 text-clay-700
-                  border border-clay-500/30 px-3 py-1.5 text-[12px] font-bold
-                  active:bg-clay-500/20 transition"
+                className="inline-flex items-center gap-1 rounded-pill bg-brand-500/10 text-gray-700
+                  border border-brand-500/30 px-3 py-1.5 text-[14px] font-bold
+                  active:bg-brand-500/20 transition"
               >
                 <GridIcon size={13} /> 오늘 활동 내용 가져오기
               </button>
@@ -783,15 +759,15 @@ export function WriteScreen() {
         }
       >
         {loadedFromClass && (
-          <div className="rounded-xl bg-clay-500/10 border border-clay-500/30 px-3 py-2 mb-4 text-[13px] font-semibold text-clay-700 flex items-center gap-2">
+          <div className="rounded-xl bg-brand-500/10 border border-brand-500/30 px-3 py-2 mb-4 text-[14px] font-semibold text-gray-700 flex items-center gap-2">
             <CheckIcon size={14} /> 오늘 활동 내용을 불러왔어요.
           </div>
         )}
         <div className="space-y-4">
           {activities.map((act, index) => (
-            <div key={act.id} className="rounded-2xl border border-cream-200 p-4 bg-cream-50/60">
+            <div key={act.id} className="rounded-2xl border border-gray-200 p-4 bg-gray-50/60">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[13px] font-bold text-clay-700">활동 {index + 1}</span>
+                <span className="text-[14px] font-bold text-gray-700">활동 {index + 1}</span>
                 {activities.length > 1 && (
                   <button
                     className="text-subtle hover:text-red-500 p-1"
@@ -820,7 +796,7 @@ export function WriteScreen() {
               ) : (
                 <button
                   onClick={() => updateActivity(act.id, 'memo', ' ')}
-                  className="mt-3 text-[13px] font-semibold text-clay-600 underline underline-offset-4"
+                  className="mt-3 text-[14px] font-semibold text-gray-600 underline underline-offset-4"
                 >
                   + 특이사항 메모 추가
                 </button>
@@ -831,16 +807,16 @@ export function WriteScreen() {
           <div className={mode === 'common' ? '' : 'grid grid-cols-2 gap-2'}>
             <button
               onClick={addActivity}
-              className="w-full rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
-                hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
+              className="w-full rounded-2xl border border-dashed border-gray-300 py-3.5 text-[15px] font-semibold text-gray-600
+                hover:bg-gray-100 transition flex items-center justify-center gap-1.5"
             >
               <PlusIcon size={18} /> 활동 추가
             </button>
             {mode !== 'common' && (
               <button
                 onClick={handleLoadClassActivities}
-                className="rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-700
-                  hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
+                className="rounded-2xl border border-dashed border-gray-300 py-3.5 text-[15px] font-semibold text-gray-700
+                  hover:bg-gray-100 transition flex items-center justify-center gap-1.5"
               >
                 <GridIcon size={18} /> 오늘 활동 내용 가져오기
               </button>
@@ -861,12 +837,12 @@ export function WriteScreen() {
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-700
-                hover:bg-cream-100 transition flex items-center justify-center gap-2"
+              className="w-full rounded-2xl border border-dashed border-gray-300 py-3.5 text-[15px] font-semibold text-gray-700
+                hover:bg-gray-100 transition flex items-center justify-center gap-2"
             >
               <CameraIcon size={18} /> 사진 넣기 (선택)
             </button>
-            <p className="text-[11px] text-subtle text-center mt-1.5">
+            <p className="text-[13px] text-subtle text-center mt-1.5">
               사진은 AI 초안 만들기에만 쓰이고 저장되지 않아요.
             </p>
 
@@ -877,11 +853,11 @@ export function WriteScreen() {
                     <img
                       src={src}
                       alt=""
-                      className="w-full h-full object-cover rounded-xl border border-cream-200"
+                      className="w-full h-full object-cover rounded-xl border border-gray-200"
                     />
                     <button
                       onClick={() => removePhoto(i)}
-                      className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center shadow"
+                      className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-ink text-surface flex items-center justify-center shadow"
                       aria-label="사진 삭제"
                     >
                       <XIcon size={12} />
@@ -897,10 +873,10 @@ export function WriteScreen() {
       <Card className="mb-4">
         <button
           onClick={() => setShowDaily((v) => !v)}
-          className="w-full flex items-center justify-between text-clay-800"
+          className="w-full flex items-center justify-between text-ink"
         >
           <span className="section-title mb-0">일상 메모 (선택)</span>
-          <span className="text-[13px] text-subtle">{showDaily ? '접기' : '열기'}</span>
+          <span className="text-[14px] text-subtle">{showDaily ? '접기' : '열기'}</span>
         </button>
         {showDaily && (
           <div className="mt-4 space-y-3">
@@ -938,8 +914,8 @@ export function WriteScreen() {
       >
         {isGenerating ? (
           <>
-            <Mascot variant="thinking" size={22} />
-            햄찌가 알림장을 쓰고 있어요…
+            <BrandMark size={22} />
+            AI가 알림장을 쓰고 있어요…
           </>
         ) : (
           <>
@@ -953,19 +929,19 @@ export function WriteScreen() {
         <div ref={draftRef} className="scroll-mt-4">
           <Card className="mb-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[13px] font-bold text-clay-700">
+              <span className="text-[14px] font-bold text-gray-700">
                 {mode === 'common' ? '공통 알림장' : '최종 알림장'}
               </span>
               <button
                 onClick={handleCopy}
-                className="inline-flex items-center gap-1.5 rounded-pill bg-clay-500 text-white
-                  py-1.5 px-3 text-[12px] font-bold shadow-pop active:bg-clay-600"
+                className="inline-flex items-center gap-1.5 rounded-pill bg-brand-500 text-on-brand
+                  py-1.5 px-3 text-[14px] font-bold shadow-pop active:bg-brand-600"
               >
                 <CopyIcon size={14} /> 전체 복사
               </button>
             </div>
             <textarea
-              className="field-textarea min-h-[300px] text-[15px] leading-7"
+              className="field-textarea min-h-[300px] text-[16px] leading-7"
               value={teacherFinal}
               onChange={(e) => {
                 setTeacherFinal(e.target.value);

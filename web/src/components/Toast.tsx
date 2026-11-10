@@ -23,18 +23,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={{ show }}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[100] flex flex-col items-center gap-2 px-4">
+      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-24 z-[100] flex flex-col items-center gap-2 px-4">
         {toasts.map((t) => (
           <div
             key={t.id}
             className={
-              'pointer-events-auto max-w-[92%] rounded-2xl px-4 py-3 text-[14px] font-semibold shadow-pop ' +
+              'pointer-events-auto max-w-[92%] rounded-2xl px-5 py-3.5 text-[16px] font-semibold shadow-pop ' +
               'animate-toast-life ' +
               (t.kind === 'error'
                 ? 'bg-[#DC2626] text-white'
                 : t.kind === 'success'
-                ? 'bg-[#8B6844] text-white'
-                : 'bg-[#2A2018] text-white')
+                ? 'bg-[#4E6B04] text-white'
+                : 'bg-[#333D4B] text-white')
             }
           >
             {t.text}

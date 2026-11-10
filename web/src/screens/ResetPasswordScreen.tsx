@@ -19,15 +19,15 @@ export function ResetPasswordScreen() {
   const [busy, setBusy] = useState(false);
 
   if (loading) {
-    return <div className="min-h-full bg-cream-50" />;
+    return <div className="min-h-full bg-surface" />;
   }
 
   if (!user) {
     return (
       <div className="min-h-full flex flex-col justify-center py-8 px-6">
         <div className="card">
-          <p className="text-[14px] font-bold text-ink mb-1">유효한 재설정 링크가 아니에요</p>
-          <p className="text-[13px] text-subtle leading-relaxed">
+          <p className="text-[15px] font-bold text-ink mb-1">유효한 재설정 링크가 아니에요</p>
+          <p className="text-[14px] text-subtle leading-relaxed">
             메일함에서 최신 링크를 다시 확인해 주세요. 링크는 발송 후 일정 시간이 지나면 만료돼요.
           </p>
           <Link to="/find-password" className="btn-primary w-full justify-center mt-4">
@@ -63,10 +63,10 @@ export function ResetPasswordScreen() {
   return (
     <div className="min-h-full flex flex-col justify-between py-8 px-6">
       <div className="pt-8">
-        <div className="w-14 h-14 rounded-3xl bg-clay-500 text-white flex items-center justify-center shadow-pop mb-5">
+        <div className="w-14 h-14 rounded-3xl bg-brand-500 text-on-brand flex items-center justify-center shadow-pop mb-5">
           <SparkleIcon size={26} />
         </div>
-        <p className="text-[13px] font-bold text-clay-500 tracking-wide mb-2">
+        <p className="text-[14px] font-bold text-brand-600 tracking-wide mb-2">
           비밀번호 재설정
         </p>
         <h1 className="text-[24px] font-extrabold text-ink leading-tight mb-3">
@@ -74,7 +74,7 @@ export function ResetPasswordScreen() {
           <br />
           입력해 주세요
         </h1>
-        <p className="text-[13px] text-subtle leading-relaxed">
+        <p className="text-[14px] text-subtle leading-relaxed">
           저장하면 자동으로 로그아웃되고, 새 비밀번호로 다시 로그인할 수 있어요.
         </p>
       </div>

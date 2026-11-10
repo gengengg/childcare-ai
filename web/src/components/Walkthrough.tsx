@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Mascot, type MascotVariant } from '@/components/Mascot';
+import { BrandMark } from '@/components/BrandMark';
 
 export type TourStep = {
   /** CSS 선택자: 이 요소를 하이라이트하고 툴팁을 그 옆에 붙인다. */
@@ -8,8 +8,6 @@ export type TourStep = {
   title: string;
   /** 문자열 또는 JSX (강조 시 <strong> 사용 가능). */
   description: React.ReactNode;
-  /** 이 스텝에서 마스코트가 어떤 표정일지. 기본 'point'. */
-  mascot?: MascotVariant;
 };
 
 type Props = {
@@ -135,7 +133,7 @@ export function Walkthrough({ steps, onFinish }: Props) {
             height={rect.height + PADDING * 2}
             rx={CORNER}
             fill="none"
-            stroke="rgb(var(--clay-400))"
+            stroke="rgb(var(--brand-400))"
             strokeWidth="2.5"
           />
         )}
@@ -144,7 +142,7 @@ export function Walkthrough({ steps, onFinish }: Props) {
       {/* 툴팁 */}
       <div
         ref={tooltipRef}
-        className="absolute rounded-2xl bg-surface border border-cream-200 shadow-pop p-5"
+        className="absolute rounded-2xl bg-surface border border-gray-200 shadow-pop p-5"
         style={{
           top: tooltip.top,
           left: tooltip.left,
@@ -152,28 +150,28 @@ export function Walkthrough({ steps, onFinish }: Props) {
         }}
       >
         <div className="flex items-start gap-3 mb-3">
-          {/* 마스코트 (원 없이) */}
-          <Mascot variant={step.mascot ?? 'point'} size={56} className="flex-shrink-0" />
+          {/* 브랜드 마크 */}
+          <BrandMark size={56} className="flex-shrink-0" />
           <div className="flex-1 min-w-0 pt-1">
-            <div className="text-[11px] font-bold text-clay-500 mb-0.5 tracking-wide">
+            <div className="text-[13px] font-bold text-brand-600 mb-0.5 tracking-wide">
               {i + 1} / {steps.length}
             </div>
-            <h3 className="text-[15px] font-extrabold text-ink leading-snug">
+            <h3 className="text-[16px] font-extrabold text-ink leading-snug">
               {step.title}
             </h3>
           </div>
         </div>
-        <div className="text-[13px] text-ink leading-6 mb-4">{step.description}</div>
+        <div className="text-[14px] text-ink leading-6 mb-4">{step.description}</div>
         <div className="flex gap-2">
-          <button onClick={onFinish} className="btn-ghost flex-1 py-2 text-[13px]">
+          <button onClick={onFinish} className="btn-ghost flex-1 py-2 text-[14px]">
             건너뛰기
           </button>
           {i > 0 && (
-            <button onClick={prev} className="btn-outline flex-1 py-2 text-[13px]">
+            <button onClick={prev} className="btn-outline flex-1 py-2 text-[14px]">
               이전
             </button>
           )}
-          <button onClick={next} className="btn-primary flex-1 py-2 text-[13px]">
+          <button onClick={next} className="btn-primary flex-1 py-2 text-[14px]">
             {i < steps.length - 1 ? '다음' : '시작!'}
           </button>
         </div>

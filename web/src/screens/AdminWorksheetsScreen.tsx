@@ -6,8 +6,6 @@ import { Header } from '@/components/Header';
 import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
 import {
-  DownloadIcon,
-  FolderIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
@@ -88,7 +86,7 @@ export function AdminWorksheetsScreen() {
   if (!checked) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-clay-500 border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -96,9 +94,9 @@ export function AdminWorksheetsScreen() {
   if (!allowed) {
     return (
       <>
-        <Header icon={<FolderIcon />} title="활동지 관리" back />
+        <Header title="활동지 관리" back />
         <Card className="mb-4">
-          <p className="text-[14px] text-ink">이 화면은 관리자만 접근할 수 있어요.</p>
+          <p className="text-[15px] text-ink">이 화면은 관리자만 접근할 수 있어요.</p>
           <button onClick={() => navigate('/settings')} className="btn-ghost w-full mt-3">
             설정으로 돌아가기
           </button>
@@ -109,7 +107,7 @@ export function AdminWorksheetsScreen() {
 
   return (
     <>
-      <Header icon={<FolderIcon />} title="활동지 라이브러리" subtitle="관리자 전용" back />
+      <Header title="활동지 라이브러리" subtitle="관리자 전용" back />
       <UploadCard onDone={reload} />
       <ListCard items={items} loading={loading} onChanged={reload} />
     </>
@@ -158,7 +156,7 @@ function UploadCard({ onDone }: { onDone: () => void }) {
     <Card className="mb-4" hint="새 활동지 업로드">
       <div className="space-y-3">
         <div>
-          <label className="text-[12px] text-subtle block mb-1">
+          <label className="text-[14px] text-subtle block mb-1">
             PDF 또는 PNG 파일 (여러 개 선택 가능)
           </label>
           <input
@@ -170,16 +168,16 @@ function UploadCard({ onDone }: { onDone: () => void }) {
               handleFilesPicked(e.target.files);
               e.target.value = '';
             }}
-            className="block w-full text-[13px]"
+            className="block w-full text-[14px]"
           />
           {files.length > 0 && (
             <ul className="mt-2 space-y-1">
               {files.map((f, i) => (
                 <li
                   key={i}
-                  className="flex items-center gap-2 text-[12px] bg-cream-100 rounded-lg px-2 py-1.5"
+                  className="flex items-center gap-2 text-[14px] bg-gray-100 rounded-lg px-2 py-1.5"
                 >
-                  <span className="uppercase text-[10px] font-bold text-clay-700 w-8 shrink-0">
+                  <span className="uppercase text-[13px] font-bold text-gray-700 w-8 shrink-0">
                     {(f.name.split('.').pop() ?? '').toLowerCase()}
                   </span>
                   <span className="flex-1 truncate">{f.name}</span>
@@ -188,7 +186,7 @@ function UploadCard({ onDone }: { onDone: () => void }) {
                   </span>
                   <button
                     onClick={() => handleRemoveFile(i)}
-                    className="p-1 text-clay-600"
+                    className="p-1 text-gray-600"
                     aria-label="파일 제거"
                   >
                     <XIcon size={12} />
@@ -200,7 +198,7 @@ function UploadCard({ onDone }: { onDone: () => void }) {
         </div>
 
         <div>
-          <label className="text-[12px] text-subtle block mb-1">제목</label>
+          <label className="text-[14px] text-subtle block mb-1">제목</label>
           <input
             className="field-input"
             placeholder="예: 봄에 피는 꽃 매칭"
@@ -211,7 +209,7 @@ function UploadCard({ onDone }: { onDone: () => void }) {
         </div>
 
         <div>
-          <label className="text-[12px] text-subtle block mb-1">설명 (선택)</label>
+          <label className="text-[14px] text-subtle block mb-1">설명 (선택)</label>
           <textarea
             className="field-input min-h-[72px]"
             placeholder="활동 진행 방법이나 필요한 준비물"
@@ -222,7 +220,7 @@ function UploadCard({ onDone }: { onDone: () => void }) {
         </div>
 
         <div>
-          <label className="text-[12px] text-subtle block mb-1">연령대</label>
+          <label className="text-[14px] text-subtle block mb-1">연령대</label>
           <Segmented
             value={draft.ageGroup}
             onChange={(v) => setDraft({ ...draft, ageGroup: v })}
@@ -251,8 +249,8 @@ function UploadCard({ onDone }: { onDone: () => void }) {
 
         <div className="flex items-center justify-between gap-3 pt-1">
           <div>
-            <p className="text-[13px] text-clay-800 font-semibold">바로 공개</p>
-            <p className="text-[11px] text-subtle mt-0.5">
+            <p className="text-[14px] text-ink font-semibold">바로 공개</p>
+            <p className="text-[13px] text-subtle mt-0.5">
               끄면 초안으로 저장되어 유저에게 보이지 않아요.
             </p>
           </div>
@@ -262,7 +260,7 @@ function UploadCard({ onDone }: { onDone: () => void }) {
             onClick={() => setDraft({ ...draft, isPublished: !draft.isPublished })}
             className={
               'shrink-0 w-12 h-7 rounded-full transition relative ' +
-              (draft.isPublished ? 'bg-clay-500' : 'bg-cream-300')
+              (draft.isPublished ? 'bg-brand-500' : 'bg-gray-300')
             }
           >
             <span
@@ -303,7 +301,7 @@ function MultiChipRow({
   };
   return (
     <div>
-      <label className="text-[12px] text-subtle block mb-1">{label}</label>
+      <label className="text-[14px] text-subtle block mb-1">{label}</label>
       <div className="flex flex-wrap gap-1.5">
         {options.map((o) => (
           <Chip key={o} active={value.includes(o)} onClick={() => toggle(o)}>
@@ -356,7 +354,7 @@ function ListCard({
         {query && (
           <button
             onClick={() => setQuery('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-clay-500 p-1"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-brand-600 p-1"
             aria-label="검색어 지우기"
           >
             <XIcon size={14} />
@@ -365,15 +363,15 @@ function ListCard({
       </div>
 
       {loading ? (
-        <p className="text-[13px] text-subtle">불러오는 중…</p>
+        <p className="text-[14px] text-subtle">불러오는 중…</p>
       ) : filtered.length === 0 ? (
-        <p className="text-[13px] text-subtle">
+        <p className="text-[14px] text-subtle">
           {items.length === 0
             ? '아직 등록된 활동지가 없어요.'
             : '검색 결과가 없어요.'}
         </p>
       ) : (
-        <ul className="divide-y divide-cream-200">
+        <ul className="divide-y divide-gray-200">
           {filtered.map((w) => (
             <WorksheetRow key={w.id} w={w} onChanged={onChanged} />
           ))}
@@ -508,23 +506,23 @@ function WorksheetRow({ w, onChanged }: { w: Worksheet; onChanged: () => void })
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-[14px] font-bold text-ink truncate">{w.title}</p>
+            <p className="text-[15px] font-bold text-ink truncate">{w.title}</p>
             {!w.isPublished && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-cream-300 text-clay-700 font-semibold">
+              <span className="text-[13px] px-1.5 py-0.5 rounded bg-gray-300 text-gray-700 font-semibold">
                 초안
               </span>
             )}
           </div>
           {w.description && (
-            <p className="text-[12px] text-subtle mt-0.5 line-clamp-2">{w.description}</p>
+            <p className="text-[14px] text-subtle mt-0.5 line-clamp-2">{w.description}</p>
           )}
-          <p className="text-[11px] text-subtle mt-1">{tagLine || '태그 없음'}</p>
+          <p className="text-[13px] text-subtle mt-1">{tagLine || '태그 없음'}</p>
         </div>
       </div>
 
       <button
         onClick={() => setManagingFiles((v) => !v)}
-        className="text-[11px] mt-2 text-clay-700 font-semibold underline underline-offset-4"
+        className="text-[13px] mt-2 text-gray-700 font-semibold underline underline-offset-4"
       >
         파일 {w.files.length}개 {managingFiles ? '접기' : '관리'}
       </button>
@@ -537,20 +535,20 @@ function WorksheetRow({ w, onChanged }: { w: Worksheet; onChanged: () => void })
         <button
           onClick={handleTogglePublish}
           disabled={busy}
-          className="text-[11px] py-2 rounded-lg bg-cream-100 text-clay-700 font-semibold"
+          className="text-[13px] py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold"
         >
           {w.isPublished ? '비공개로' : '공개로'}
         </button>
         <button
           onClick={() => setEditing(true)}
-          className="text-[11px] py-2 rounded-lg bg-cream-100 text-clay-700 font-semibold flex items-center justify-center gap-1"
+          className="text-[13px] py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold flex items-center justify-center gap-1"
         >
           <PencilIcon size={12} /> 편집
         </button>
         <button
           onClick={handleDelete}
           disabled={busy}
-          className="text-[11px] py-2 rounded-lg bg-red-500/10 text-red-600 font-semibold flex items-center justify-center gap-1"
+          className="text-[13px] py-2 rounded-lg bg-red-500/10 text-red-600 font-semibold flex items-center justify-center gap-1"
         >
           <TrashIcon size={12} /> 삭제
         </button>
@@ -609,22 +607,22 @@ function FileManager({
   };
 
   return (
-    <div className="mt-2 bg-cream-100 rounded-xl p-3 space-y-2">
+    <div className="mt-2 bg-gray-100 rounded-xl p-3 space-y-2">
       {files.length === 0 && (
-        <p className="text-[12px] text-subtle">파일이 없어요. 아래에서 추가하세요.</p>
+        <p className="text-[14px] text-subtle">파일이 없어요. 아래에서 추가하세요.</p>
       )}
       {files.map((f) => (
         <div
           key={f.id}
-          className="flex items-center gap-2 text-[12px] bg-white rounded-lg px-2 py-1.5"
+          className="flex items-center gap-2 text-[14px] bg-white rounded-lg px-2 py-1.5"
         >
-          <span className="uppercase text-[10px] font-bold text-clay-700 w-8 shrink-0">
+          <span className="uppercase text-[13px] font-bold text-gray-700 w-8 shrink-0">
             {fileExtension(f.filePath)}
           </span>
           <span className="flex-1 truncate">{f.originalName || f.filePath}</span>
           <button
             onClick={() => handleOpen(f)}
-            className="text-[11px] text-clay-700 font-semibold px-2 py-1"
+            className="text-[13px] text-gray-700 font-semibold px-2 py-1"
           >
             열기
           </button>
@@ -639,7 +637,7 @@ function FileManager({
         </div>
       ))}
       <div>
-        <label className="text-[11px] text-subtle block mb-1">파일 추가</label>
+        <label className="text-[13px] text-subtle block mb-1">파일 추가</label>
         <input
           type="file"
           accept="application/pdf,.pdf,image/png,.png"
@@ -649,7 +647,7 @@ function FileManager({
             handleAddFiles(e.target.files);
             e.target.value = '';
           }}
-          className="block w-full text-[12px]"
+          className="block w-full text-[14px]"
         />
       </div>
     </div>

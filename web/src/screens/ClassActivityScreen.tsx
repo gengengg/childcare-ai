@@ -146,7 +146,6 @@ export function ClassActivityScreen() {
     <>
       <Header
         back
-        icon={<SparkleIcon />}
         title="오늘 활동 내용"
         subtitle="반마다 한 번만 입력하면 아이별 알림장에서 자동으로 불러와요"
       />
@@ -154,7 +153,7 @@ export function ClassActivityScreen() {
       {showClass && (
         <Card className="mb-4" hint="반 선택">
           {classNames.length === 0 ? (
-            <p className="text-subtle text-[14px]">등록된 반이 없어요. 아이 관리에서 먼저 아이를 추가해주세요.</p>
+            <p className="text-subtle text-[15px]">등록된 반이 없어요. 아이 관리에서 먼저 아이를 추가해주세요.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {classNames.map((cn) => (
@@ -169,7 +168,7 @@ export function ClassActivityScreen() {
             </div>
           )}
           {selectedClass && (
-            <p className="text-[12px] text-subtle mt-3">
+            <p className="text-[14px] text-subtle mt-3">
               {selectedClass} 아이 {childCountInClass}명
             </p>
           )}
@@ -180,11 +179,11 @@ export function ClassActivityScreen() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowCalendar((v) => !v)}
-            className="flex-1 rounded-2xl border border-cream-200 bg-cream-50 px-4 py-3 text-left"
+            className="flex-1 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-left"
           >
-            <div className="text-[11px] text-subtle font-semibold">선택된 날짜</div>
-            <div className="text-[15px] font-bold text-ink flex items-center gap-2">
-              <CalendarIcon size={16} className="text-clay-500" />
+            <div className="text-[13px] text-subtle font-semibold">선택된 날짜</div>
+            <div className="text-[16px] font-bold text-ink flex items-center gap-2">
+              <CalendarIcon size={16} className="text-brand-600" />
               {selectedDate}
             </div>
           </button>
@@ -199,7 +198,7 @@ export function ClassActivityScreen() {
           </button>
         </div>
         {showCalendar && (
-          <div className="mt-4 border-t border-cream-200 pt-4">
+          <div className="mt-4 border-t border-gray-200 pt-4">
             <MonthCalendar
               value={selectedDate}
               onChange={(d) => {
@@ -213,23 +212,23 @@ export function ClassActivityScreen() {
 
       <Card className="mb-4" hint="오늘의 활동">
         {isLoaded && (
-          <div className="rounded-xl bg-clay-500/10 border border-clay-500/20 px-3 py-2 mb-4 text-[13px] font-semibold text-clay-700">
+          <div className="rounded-xl bg-brand-500/10 border border-brand-500/20 px-3 py-2 mb-4 text-[14px] font-semibold text-gray-700">
             {autoSaved ? '수정 사항이 자동 저장돼요.' : '저장된 활동을 불러왔어요.'}
           </div>
         )}
 
         <button
           onClick={() => setPickerOpen(true)}
-          className="w-full mb-4 rounded-2xl border border-clay-300/60 bg-clay-500/5 py-3 text-[14px] font-semibold text-clay-700 hover:bg-clay-500/10 transition flex items-center justify-center gap-2"
+          className="w-full mb-4 rounded-2xl border border-brand-300/60 bg-brand-500/5 py-3 text-[15px] font-semibold text-gray-700 hover:bg-brand-500/10 transition flex items-center justify-center gap-2"
         >
           <SparkleIcon size={16} /> 월간계획안에서 불러오기
         </button>
 
         <div className="space-y-4">
           {activities.map((act, index) => (
-            <div key={act.id} className="rounded-2xl border border-cream-200 p-4 bg-cream-50/60">
+            <div key={act.id} className="rounded-2xl border border-gray-200 p-4 bg-gray-50/60">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[13px] font-bold text-clay-700">활동 {index + 1}</span>
+                <span className="text-[14px] font-bold text-gray-700">활동 {index + 1}</span>
                 {activities.length > 1 && (
                   <button
                     onClick={() => remove(act.id)}
@@ -259,8 +258,8 @@ export function ClassActivityScreen() {
 
           <button
             onClick={add}
-            className="w-full rounded-2xl border border-dashed border-cream-300 py-3.5 text-[14px] font-semibold text-clay-600
-              hover:bg-cream-100 transition flex items-center justify-center gap-1.5"
+            className="w-full rounded-2xl border border-dashed border-gray-300 py-3.5 text-[15px] font-semibold text-gray-600
+              hover:bg-gray-100 transition flex items-center justify-center gap-1.5"
           >
             <PlusIcon size={18} /> 활동 추가하기
           </button>

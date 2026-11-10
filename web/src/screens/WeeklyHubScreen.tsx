@@ -8,9 +8,7 @@ import {
   CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  NoteIcon,
   PlusIcon,
-  SparkleIcon,
   TrashIcon,
 } from '@/components/icons';
 import { getChildren, type Child } from '@/lib/children';
@@ -155,7 +153,6 @@ export function WeeklyHubScreen() {
   return (
     <>
       <Header
-        icon={<NoteIcon />}
         title="학급 운영"
         subtitle="월간계획안과 주간보육일지"
       />
@@ -164,18 +161,18 @@ export function WeeklyHubScreen() {
       <div className="flex items-center justify-between mb-3 px-1">
         <button
           onClick={() => shiftMonth(-1)}
-          className="w-9 h-9 rounded-full hover:bg-cream-100 flex items-center justify-center text-clay-700"
+          className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-700"
           aria-label="이전 달"
         >
           <ChevronLeftIcon size={18} />
         </button>
         <div className="text-center">
-          <div className="text-[13px] text-subtle font-medium">{year}년</div>
+          <div className="text-[14px] text-subtle font-medium">{year}년</div>
           <div className="text-[22px] font-extrabold text-ink -mt-0.5">{month}월</div>
         </div>
         <button
           onClick={() => shiftMonth(1)}
-          className="w-9 h-9 rounded-full hover:bg-cream-100 flex items-center justify-center text-clay-700"
+          className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-700"
           aria-label="다음 달"
         >
           <ChevronRightIcon size={18} />
@@ -215,11 +212,11 @@ export function WeeklyHubScreen() {
         ) : plan ? (
           <div>
             {plan.theme && (
-              <div className="mb-3 pb-3 border-b border-cream-200">
-                <p className="text-[11px] font-bold text-clay-500 tracking-wide mb-1">
+              <div className="mb-3 pb-3 border-b border-gray-200">
+                <p className="text-[13px] font-bold text-brand-600 tracking-wide mb-1">
                   놀이 주제
                 </p>
-                <p className="text-[15px] font-bold text-ink leading-tight">
+                <p className="text-[16px] font-bold text-ink leading-tight">
                   {plan.theme}
                 </p>
               </div>
@@ -228,13 +225,13 @@ export function WeeklyHubScreen() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex-1 py-2.5 rounded-xl bg-cream-100 text-ink text-[13px] font-semibold hover:bg-cream-200 disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-gray-100 text-ink text-[14px] font-semibold hover:bg-gray-200 disabled:opacity-50"
               >
                 {uploading ? '분석 중…' : '다시 업로드'}
               </button>
               <button
                 onClick={handleDelete}
-                className="px-3 py-2.5 rounded-xl bg-cream-100 text-subtle hover:text-red-500"
+                className="px-3 py-2.5 rounded-xl bg-gray-100 text-subtle hover:text-red-500"
                 aria-label="삭제"
               >
                 <TrashIcon size={16} />
@@ -246,12 +243,12 @@ export function WeeklyHubScreen() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="w-full rounded-2xl border border-dashed border-cream-300 py-4 text-[14px] font-semibold text-clay-700 hover:bg-cream-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full rounded-2xl border border-dashed border-gray-300 py-4 text-[15px] font-semibold text-gray-700 hover:bg-gray-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <PlusIcon size={18} />
               {uploading ? 'AI로 분석 중…' : '월간계획안 업로드 (PDF · DOCX)'}
             </button>
-            <p className="text-[11px] text-subtle text-center mt-2 leading-relaxed">
+            <p className="text-[13px] text-subtle text-center mt-2 leading-relaxed">
               HWP 파일은 한글에서 <strong>[PDF로 저장]</strong> 후 업로드해 주세요.
               <br />
               AI가 4주 활동을 자동으로 정리합니다.
@@ -268,31 +265,31 @@ export function WeeklyHubScreen() {
             <button
               key={wn}
               onClick={() => openWeeklyDiary(wn)}
-              className="w-full text-left bg-surface rounded-card shadow-card border border-cream-200/60 p-4 hover:border-clay-300 transition group"
+              className="w-full text-left bg-surface rounded-card shadow-card border border-gray-200/60 p-4 hover:border-brand-300 transition group"
             >
               <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-clay-500/10 text-clay-700 flex flex-col items-center justify-center flex-shrink-0">
-                  <span className="text-[10px] font-bold leading-none">주</span>
+                <div className="w-12 h-12 rounded-2xl bg-brand-500/10 text-gray-700 flex flex-col items-center justify-center flex-shrink-0">
+                  <span className="text-[13px] font-bold leading-none">주</span>
                   <span className="text-[18px] font-extrabold leading-none mt-0.5">
                     {wn}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-bold text-ink">{month}월 {wn}주</p>
+                  <p className="text-[16px] font-bold text-ink">{month}월 {wn}주</p>
                   {wk?.subtheme ? (
-                    <p className="text-[13px] text-subtle mt-0.5 truncate">
+                    <p className="text-[14px] text-subtle mt-0.5 truncate">
                       {wk.subtheme}
                     </p>
                   ) : (
-                    <p className="text-[12px] text-subtle mt-0.5">주간보육일지 작성/수정</p>
+                    <p className="text-[14px] text-subtle mt-0.5">주간보육일지 작성/수정</p>
                   )}
                   {wk && (
-                    <p className="text-[11px] text-clay-500 font-semibold mt-1">
+                    <p className="text-[13px] text-brand-600 font-semibold mt-1">
                       계획된 활동 {wk.activities.length}개
                     </p>
                   )}
                 </div>
-                <div className="text-cream-400 group-hover:text-clay-500 transition self-center">
+                <div className="text-gray-500 group-hover:text-brand-600 transition self-center">
                   <ChevronRightIcon size={18} />
                 </div>
               </div>
@@ -304,7 +301,7 @@ export function WeeklyHubScreen() {
       {/* 캘린더 진입 (부가) */}
       <button
         onClick={() => navigate('/calendar')}
-        className="w-full mt-4 py-3 rounded-2xl bg-cream-100 text-clay-700 text-[13px] font-semibold hover:bg-cream-200 flex items-center justify-center gap-2"
+        className="w-full mt-4 py-3 rounded-2xl bg-gray-100 text-gray-700 text-[14px] font-semibold hover:bg-gray-200 flex items-center justify-center gap-2"
       >
         <CalendarIcon size={16} />
         날짜별 알림장 달력으로 보기

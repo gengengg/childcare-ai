@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/Card';
 import { Header } from '@/components/Header';
 import { MonthCalendar } from '@/components/MonthCalendar';
-import { CalendarIcon } from '@/components/icons';
-import { Mascot } from '@/components/Mascot';
+import {  } from '@/components/icons';
+import { BrandMark } from '@/components/BrandMark';
 import { getAllDailyRecords, getTodayKey, type DailyRecord } from '@/lib/dailyRecords';
 
 function formatKorean(date: string) {
@@ -34,7 +34,6 @@ export function CalendarScreen() {
     <>
       <Header
         back
-        icon={<CalendarIcon />}
         title="달력"
         subtitle="날짜를 눌러 알림장을 확인·수정해요"
       />
@@ -46,11 +45,11 @@ export function CalendarScreen() {
       <Card hint={formatKorean(selected)}>
         {dayRecords.length === 0 ? (
           <div className="flex flex-col items-center py-6">
-            <Mascot variant="sleep" size={72} className="mb-3" />
+            <BrandMark tone="muted" size={72} className="mb-3" />
             <p className="text-center text-subtle">이 날짜에 저장된 알림장이 없어요.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-cream-200">
+          <ul className="divide-y divide-gray-200">
             {dayRecords.map((r) => (
               <li key={r.id}>
                 <button
@@ -59,16 +58,16 @@ export function CalendarScreen() {
                   }
                   className="w-full flex items-center gap-3 py-3 text-left"
                 >
-                  <div className="w-10 h-10 rounded-full bg-cream-200 text-clay-700 flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold">
                     {r.childName.slice(0, 1)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[15px] font-bold text-ink">{r.childName}</div>
-                    <div className="text-[12px] text-subtle truncate">
+                    <div className="text-[16px] font-bold text-ink">{r.childName}</div>
+                    <div className="text-[14px] text-subtle truncate">
                       {r.className || ' '} · {(r.teacherFinal || r.aiDraft).slice(0, 30)}
                     </div>
                   </div>
-                  <span className="text-[12px] font-bold text-clay-600">편집</span>
+                  <span className="text-[14px] font-bold text-gray-600">편집</span>
                 </button>
               </li>
             ))}

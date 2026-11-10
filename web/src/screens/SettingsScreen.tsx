@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Card } from '@/components/Card';
 import { Header } from '@/components/Header';
 import { Segmented } from '@/components/Segmented';
 import { useToast } from '@/components/Toast';
-import { FolderIcon, SettingsIcon, SparkleIcon, TrashIcon, UserIcon } from '@/components/icons';
+import { FolderIcon, SparkleIcon, TrashIcon, UserIcon } from '@/components/icons';
 import { getChildren, type Child } from '@/lib/children';
 import { resetOnboarding } from '@/lib/onboarding';
 import { hasTourUpdate, resetTour } from '@/lib/tour';
@@ -68,16 +68,21 @@ const LENGTHS: { value: LengthOption; label: string }[] = [
 
 export function SettingsScreen() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>('general');
+  const [params, setParams] = useSearchParams();
+  const initial = params.get('tab');
+  const tab: Tab = initial === 'style' || initial === 'data' ? initial : 'general';
+  const setTab = (t: Tab) => setParams({ tab: t }, { replace: true });
 
   return (
     <>
-      <Header icon={<SettingsIcon />} title="설정" />
+      <Header back title="설정" />
 
-      <div className="tabs mb-4">
+      <div className="tabs mb-4" role="tablist">
         {TABS.map((t) => (
           <button
             key={t.value}
+            role="tab"
+            aria-selected={tab === t.value}
             onClick={() => setTab(t.value)}
             className={clsx('tabs-item', tab === t.value && 'tabs-item-active')}
           >
@@ -112,6 +117,15 @@ function GeneralTab() {
     })();
   }, []);
 
+  // '전체 > 도움말'에서 들어오면 안내 카드로 스크롤
+  useEffect(() => {
+    if (window.location.hash !== '#help') return;
+    const t = window.setTimeout(() => {
+      document.getElementById('help')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    return () => window.clearTimeout(t);
+  }, []);
+
   const effectiveShowClass = computeShowClass(classSetting, children);
 
   const handleTheme = async (v: ThemePref) => {
@@ -140,7 +154,7 @@ function GeneralTab() {
 
       {isAdmin && (
         <Card className="mb-4" hint="관리자">
-          <p className="text-[12px] text-subtle mb-3">
+          <p className="text-[14px] text-subtle mb-3">
             활동지 라이브러리를 추가·편집할 수 있어요.
           </p>
           <button
@@ -153,14 +167,14 @@ function GeneralTab() {
       )}
 
       <Card className="mb-4" hint="테마">
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           자동은 기기의 다크모드 설정을 따라가요.
         </p>
         <Segmented value={theme} onChange={handleTheme} options={THEME_OPTIONS} />
       </Card>
 
       <Card className="mb-4" hint="반 이름 표시">
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           한 반만 담당하시면 반 이름을 감출 수 있어요. 여러 반을 담당하시면 표시해서 알림장을 구분하세요.
         </p>
         <Segmented
@@ -168,7 +182,7 @@ function GeneralTab() {
           onChange={handleClassSetting}
           options={CLASS_OPTIONS}
         />
-        <p className="text-[11px] text-subtle mt-2">
+        <p className="text-[13px] text-subtle mt-2">
           {classSetting === 'auto'
             ? `현재: ${effectiveShowClass ? '표시 (등록된 반이 2개 이상)' : '숨김 (등록된 반이 하나 이하)'}`
             : classSetting === 'off'
@@ -177,8 +191,8 @@ function GeneralTab() {
         </p>
       </Card>
 
-      <Card className="mb-4" hint="안내">
-        <p className="text-[12px] text-subtle mb-3">
+      <Card id="help" className="mb-4 scroll-mt-4" hint="안내">
+        <p className="text-[14px] text-subtle mb-3">
           첫 실행 안내와 튜토리얼을 언제든 다시 볼 수 있어요.
         </p>
         <div className="grid grid-cols-2 gap-2">
@@ -186,21 +200,21 @@ function GeneralTab() {
             {tourHasUpdate && (
               <div
                 className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap
-                  bg-clay-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-md
+                  bg-brand-600 text-on-brand text-[13px] font-bold px-3 py-1.5 rounded-lg shadow-md
                   animate-bounce"
               >
                 업데이트를 했어요!
                 <span
                   className="absolute left-1/2 -translate-x-1/2 top-full -mt-px w-0 h-0
-                    border-x-[5px] border-x-transparent border-t-[6px] border-t-clay-600"
+                    border-x-[5px] border-x-transparent border-t-[6px] border-t-brand-600"
                 />
               </div>
             )}
-            <button onClick={handleResetTour} className="btn-primary py-3 w-full">
+            <button onClick={handleResetTour} className="btn-tonal w-full px-3 text-[15px]">
               튜토리얼 다시 보기
             </button>
           </div>
-          <button onClick={handleResetOnboarding} className="btn-ghost py-3">
+          <button onClick={handleResetOnboarding} className="btn-ghost px-3 text-[15px]">
             온보딩 다시 보기
           </button>
         </div>
@@ -248,10 +262,10 @@ function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
       <Card className="mb-4" hint="이모티콘 사용">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[14px] text-clay-800 font-semibold">
+            <p className="text-[15px] text-ink font-semibold">
               알림장에 이모지 넣기
             </p>
-            <p className="text-[12px] text-subtle mt-1">
+            <p className="text-[14px] text-subtle mt-1">
               켜면 활동마다 2~3개의 이모지를 자연스럽게 섞어 써요.
             </p>
           </div>
@@ -261,7 +275,7 @@ function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
             onClick={toggleEmoji}
             className={
               'shrink-0 w-12 h-7 rounded-full transition relative ' +
-              (emojiOn ? 'bg-clay-500' : 'bg-cream-300')
+              (emojiOn ? 'bg-brand-500' : 'bg-gray-300')
             }
           >
             <span
@@ -277,10 +291,10 @@ function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
       <Card className="mb-4" hint="영역명 태그">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[14px] text-clay-800 font-semibold">
+            <p className="text-[15px] text-ink font-semibold">
               소제목 앞에 [영역명] 붙이기
             </p>
-            <p className="text-[12px] text-subtle mt-1">
+            <p className="text-[14px] text-subtle mt-1">
               켜면 "1. [사회관계] 블록놀이" 처럼 표준 5영역 태그가 붙어요.
               끄면 "1. 블록놀이" 처럼 자연스러운 문장으로만 나와요.
             </p>
@@ -291,7 +305,7 @@ function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
             onClick={toggleAreaLabels}
             className={
               'shrink-0 w-12 h-7 rounded-full transition relative ' +
-              (areaLabelsOn ? 'bg-clay-500' : 'bg-cream-300')
+              (areaLabelsOn ? 'bg-brand-500' : 'bg-gray-300')
             }
           >
             <span
@@ -305,7 +319,7 @@ function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
       </Card>
 
       <Card className="mb-4" hint="기본 톤">
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           알림장 작성 화면에서 처음 선택되는 톤이에요.
         </p>
         <Segmented value={tone} onChange={handleTone} options={TONES} />
@@ -316,7 +330,7 @@ function StyleTab({ onGoStyleSetup }: { onGoStyleSetup: () => void }) {
       </Card>
 
       <Card className="mb-4" hint="문체 학습">
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           평소 쓰시던 알림장을 텍스트/이미지로 등록하면 AI가 그 톤을 학습해요.
         </p>
         <button onClick={onGoStyleSetup} className="btn-primary w-full">
@@ -407,14 +421,14 @@ function AccountCard() {
     return (
       <Card className="mb-4" hint="계정">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-clay-500 text-white flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-brand-500 text-on-brand flex items-center justify-center flex-shrink-0">
             <UserIcon size={20} />
           </div>
           <div className="min-w-0 flex-1">
             {editingNickname ? (
               <div className="flex gap-1.5 items-center">
                 <input
-                  className="field-input py-1.5 text-[14px] flex-1"
+                  className="field-input py-1.5 text-[15px] flex-1"
                   placeholder="닉네임"
                   value={nicknameDraft}
                   onChange={(e) => setNicknameDraft(e.target.value)}
@@ -431,7 +445,7 @@ function AccountCard() {
                 <button
                   onClick={handleSaveNickname}
                   disabled={savingNickname}
-                  className="px-3 py-1.5 rounded-xl bg-clay-500 text-white text-[12px] font-bold disabled:opacity-50"
+                  className="px-3 py-1.5 rounded-xl bg-brand-500 text-on-brand text-[14px] font-bold disabled:opacity-50"
                 >
                   저장
                 </button>
@@ -440,7 +454,7 @@ function AccountCard() {
                     setNicknameDraft(nickname);
                     setEditingNickname(false);
                   }}
-                  className="px-2 py-1.5 rounded-xl text-[12px] text-subtle"
+                  className="px-2 py-1.5 rounded-xl text-[14px] text-subtle"
                 >
                   취소
                 </button>
@@ -448,14 +462,14 @@ function AccountCard() {
             ) : (
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-bold text-ink truncate">
+                  <p className="text-[15px] font-bold text-ink truncate">
                     {nickname || '선생님'}
                   </p>
-                  <p className="text-[12px] text-subtle truncate">{user?.email ?? '로그인됨'}</p>
+                  <p className="text-[14px] text-subtle truncate">{user?.email ?? '로그인됨'}</p>
                 </div>
                 <button
                   onClick={() => setEditingNickname(true)}
-                  className="text-[12px] text-clay-600 font-semibold underline underline-offset-4 whitespace-nowrap"
+                  className="text-[14px] text-gray-600 font-semibold underline underline-offset-4 whitespace-nowrap"
                 >
                   닉네임 변경
                 </button>
@@ -463,7 +477,7 @@ function AccountCard() {
             )}
           </div>
         </div>
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           알림장, 아이 목록, 문체가 클라우드에 저장돼요. 다른 기기에서도 로그인만 하면 이어서 쓸 수 있어요.
         </p>
         <button
@@ -480,15 +494,15 @@ function AccountCard() {
   return (
     <Card className="mb-4" hint="계정">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-full bg-cream-200 text-clay-700 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center">
           <UserIcon size={20} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-bold text-ink">게스트 모드</p>
-          <p className="text-[12px] text-subtle">이 기기에만 저장 중</p>
+          <p className="text-[15px] font-bold text-ink">게스트 모드</p>
+          <p className="text-[14px] text-subtle">이 기기에만 저장 중</p>
         </div>
       </div>
-      <p className="text-[12px] text-subtle mb-3">
+      <p className="text-[14px] text-subtle mb-3">
         로그인하면 다른 기기에서도 이어서 쓸 수 있어요. 지금까지의 게스트 데이터는 이 기기에 그대로 남습니다.
       </p>
       <button
@@ -529,7 +543,7 @@ function PasswordCard() {
 
   return (
     <Card className="mb-4" hint="비밀번호">
-      <p className="text-[12px] text-subtle mb-3">
+      <p className="text-[14px] text-subtle mb-3">
         비밀번호를 저장하면 이메일 + 비밀번호로 바로 로그인할 수 있어요.
       </p>
       <input
@@ -588,12 +602,12 @@ function DataTab() {
     <>
       <Card className="mb-4" hint="저장 위치">
         {mode === 'authed' ? (
-          <p className="text-[13px] text-ink leading-relaxed">
+          <p className="text-[14px] text-ink leading-relaxed">
             로그인 상태예요. 데이터는 <strong>클라우드(Supabase)</strong>에 저장돼요.
             다른 기기에서도 로그인하면 그대로 이어서 쓸 수 있어요.
           </p>
         ) : (
-          <p className="text-[13px] text-ink leading-relaxed">
+          <p className="text-[14px] text-ink leading-relaxed">
             게스트 모드예요. 데이터는 <strong>이 브라우저 안에만</strong> 저장돼요.
             다른 기기나 다른 브라우저로 옮기려면 별도의 백업이 필요합니다.
           </p>
@@ -601,7 +615,7 @@ function DataTab() {
       </Card>
 
       <Card className="mb-4" hint="위험 영역">
-        <p className="text-[12px] text-subtle mb-3">
+        <p className="text-[14px] text-subtle mb-3">
           {mode === 'authed'
             ? '이 기기에 남아 있는 게스트용 로컬 데이터만 삭제해요. 클라우드에 저장된 계정 데이터는 그대로 남습니다.'
             : '아이·알림장·오늘 활동 내용·문체 설정 등 모든 저장 데이터를 지워요.'}

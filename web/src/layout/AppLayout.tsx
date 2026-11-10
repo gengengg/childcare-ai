@@ -7,10 +7,10 @@ import { BottomTabBar } from './BottomTabBar';
  */
 export function AppLayout() {
   return (
-    <div className="min-h-full bg-cream-50">
-      <div className="mx-auto max-w-md px-5 pt-3 pb-28">
+    <div className="min-h-full bg-page">
+      <main className="mx-auto max-w-md px-4 pt-3 pb-28">
         <Outlet />
-      </div>
+      </main>
       <BottomTabBar />
     </div>
   );
@@ -19,13 +19,13 @@ export function AppLayout() {
 /** 인증/온보딩 등 하단 탭이 없는 특수 화면용 (로그인 전 상태) */
 export function SubLayout() {
   return (
-    <div className="min-h-full bg-cream-50">
-      <div
+    <div className="min-h-full bg-surface">
+      <main
         className="mx-auto max-w-md px-5 pt-3"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
       >
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }

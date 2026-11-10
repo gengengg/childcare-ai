@@ -1,67 +1,93 @@
-import { NavLink } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
-import {
-  PencilIcon,
-  FolderIcon,
-  GridIcon,
-  NoteIcon,
-  UsersIcon,
-  SettingsIcon,
-} from '@/components/icons';
+import { PencilIcon, FolderIcon, GridIcon, NoteIcon, MenuIcon } from '@/components/icons';
 
-const tabs = [
-  { to: '/records', label: '보관함', Icon: FolderIcon, tourKey: 'tab-records' },
-  { to: '/weekly', label: '학급', Icon: NoteIcon, tourKey: 'tab-weekly' },
-  { to: '/worksheets', label: '활동지', Icon: GridIcon, tourKey: 'tab-worksheets' },
-  { to: '/', label: '작성', Icon: PencilIcon, end: true, tourKey: 'tab-write' },
-  { to: '/children', label: '아이', Icon: UsersIcon, tourKey: 'tab-children' },
-  { to: '/settings', label: '설정', Icon: SettingsIcon, tourKey: 'tab-settings' },
+type Tab = {
+  to: string;
+  label: string;
+  Icon: (p: { size?: number; strokeWidth?: number; className?: string }) => React.ReactElement;
+  tourKey: string;
+  /** 이 탭을 활성으로 표시할 경로들 (접두사 매칭) */
+  match: (path: string) => boolean;
+};
+
+const startsWithAny = (path: string, prefixes: string[]) =>
+  prefixes.some((p) => path === p || path.startsWith(p + '/'));
+
+const tabs: Tab[] = [
+  {
+    to: '/',
+    label: '작성',
+    Icon: PencilIcon,
+    tourKey: 'tab-write',
+    match: (p) => p === '/' || startsWithAny(p, ['/record']),
+  },
+  {
+    to: '/records',
+    label: '보관함',
+    Icon: FolderIcon,
+    tourKey: 'tab-records',
+    match: (p) => startsWithAny(p, ['/records', '/calendar']),
+  },
+  {
+    to: '/weekly',
+    label: '학급',
+    Icon: NoteIcon,
+    tourKey: 'tab-weekly',
+    match: (p) => startsWithAny(p, ['/weekly', '/weekly-diary', '/class-activity', '/observation']),
+  },
+  {
+    to: '/worksheets',
+    label: '활동지',
+    Icon: GridIcon,
+    tourKey: 'tab-worksheets',
+    match: (p) => startsWithAny(p, ['/worksheets']),
+  },
+  {
+    to: '/menu',
+    label: '전체',
+    Icon: MenuIcon,
+    tourKey: 'tab-menu',
+    match: (p) =>
+      startsWithAny(p, ['/menu', '/settings', '/children', '/manage-children', '/admin']),
+  },
 ];
 
 export function BottomTabBar() {
+  const { pathname } = useLocation();
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-40 border-t border-cream-200/80 bg-surface/95 backdrop-blur-md"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 4px)' }}
+      aria-label="주요 메뉴"
+      className="fixed bottom-0 inset-x-0 z-40 rounded-t-[24px] border-t border-gray-200/70 bg-surface/95 backdrop-blur-md"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="mx-auto max-w-md grid grid-cols-6 h-16 pt-1">
-        {tabs.map((t) => (
-          <NavLink
-            key={t.to}
-            to={t.to}
-            end={t.end}
-            data-tour={t.tourKey}
-            className="flex flex-col items-center justify-center gap-0.5 relative"
-          >
-            {({ isActive }) => (
-              <>
-                <div
-                  className={clsx(
-                    'flex items-center justify-center transition-all',
-                    isActive ? 'text-clay-700' : 'text-cream-400'
-                  )}
-                >
-                  <t.Icon
-                    size={22}
-                    strokeWidth={isActive ? 2.2 : 1.8}
-                    className="transition-all"
-                  />
-                </div>
-                <span
-                  className={clsx(
-                    'text-[10.5px] tracking-tight transition-colors',
-                    isActive ? 'text-clay-800 font-bold' : 'text-cream-400 font-medium'
-                  )}
-                >
-                  {t.label}
-                </span>
-                {isActive && (
-                  <span className="absolute top-0 h-[3px] w-8 rounded-b-full bg-clay-500" />
+      <div className="mx-auto max-w-md grid grid-cols-5 h-[68px]">
+        {tabs.map((t) => {
+          const active = t.match(pathname);
+          return (
+            <Link
+              key={t.to}
+              to={t.to}
+              data-tour={t.tourKey}
+              aria-current={active ? 'page' : undefined}
+              className="flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+            >
+              <t.Icon
+                size={25}
+                strokeWidth={active ? 2.3 : 1.9}
+                className={clsx('transition-colors', active ? 'text-brand-500' : 'text-gray-400')}
+              />
+              <span
+                className={clsx(
+                  'text-[13px] tracking-tight transition-colors',
+                  active ? 'text-ink font-bold' : 'text-gray-500 font-medium'
                 )}
-              </>
-            )}
-          </NavLink>
-        ))}
+              >
+                {t.label}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

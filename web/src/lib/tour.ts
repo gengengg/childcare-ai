@@ -3,7 +3,7 @@ import { Preferences } from '@capacitor/preferences';
 // 튜토리얼 내용이 바뀔 때마다 이 숫자를 증가시키면
 // SettingsScreen '튜토리얼 다시 보기' 옆에 업데이트 배지가 뜬다.
 // (자동으로 튜토리얼이 다시 뜨지는 않음 — 배지로만 유도)
-export const TOUR_VERSION = 3;
+export const TOUR_VERSION = 4; // 4: 하단 탭 5개(전체 탭) 개편
 
 // Capacitor Preferences 는 Android SharedPreferences / iOS NSUserDefaults 로 저장되어
 // 앱 재실행·백그라운드 종료에도 확실히 유지된다. (웹은 localStorage 로 fallback)

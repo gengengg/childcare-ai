@@ -14,7 +14,7 @@ import {
 import { setRememberMe } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { SparkleIcon } from '@/components/icons';
-import { Mascot } from '@/components/Mascot';
+import { BrandMark } from '@/components/BrandMark';
 import { VerifyCodePanel } from '@/components/VerifyCodePanel';
 
 type Mode = 'signin' | 'signup';
@@ -151,26 +151,25 @@ export function LoginScreen() {
   return (
     <div className="min-h-full flex flex-col justify-between py-8 px-6">
       <div className="pt-8">
-        <Mascot variant="wave" size={80} className="mb-5" />
-        <p className="text-[13px] font-bold text-clay-500 tracking-wide mb-2">알림장 AI</p>
-        <h1 className="text-[26px] font-extrabold text-ink leading-tight mb-3">
+        <BrandMark variant="emblem" size={96} label="온퇴근" className="mb-6 -ml-1.5" />
+        <h1 className="text-[26px] font-bold text-ink leading-tight tracking-tight mb-3">
           로그인하고
           <br />
           어디서든 이어서 써요
         </h1>
-        <p className="text-[14px] text-subtle leading-relaxed">
+        <p className="text-[16px] text-gray-600 leading-relaxed">
           알림장, 아이 목록, 문체가 클라우드에 저장돼 다른 기기에서도 이어서 쓸 수 있어요.
         </p>
       </div>
 
       <div className="pt-6 space-y-3">
-        <div className="grid grid-cols-2 gap-1 p-1 bg-cream-100 rounded-2xl">
+        <div className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-2xl">
           {(['signin', 'signup'] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
               className={clsx(
-                'text-center py-2.5 rounded-xl text-[14px] font-medium transition',
+                'text-center py-2.5 rounded-xl text-[15px] font-medium transition',
                 mode === m
                   ? 'bg-surface text-ink shadow-sm font-bold'
                   : 'text-subtle'
@@ -211,10 +210,10 @@ export function LoginScreen() {
             type="checkbox"
             checked={remember}
             onChange={(e) => handleRememberChange(e.target.checked)}
-            className="w-4 h-4 accent-clay-500"
+            className="w-4 h-4 accent-brand-500"
           />
-          <span className="text-[13px] text-ink">자동 로그인</span>
-          <span className="text-[11px] text-subtle">
+          <span className="text-[14px] text-ink">자동 로그인</span>
+          <span className="text-[13px] text-subtle">
             (끄면 브라우저 종료 시 로그아웃)
           </span>
         </label>
@@ -229,29 +228,29 @@ export function LoginScreen() {
         </button>
 
         {mode === 'signup' && (
-          <p className="text-[11px] text-subtle text-center leading-relaxed">
+          <p className="text-[13px] text-subtle text-center leading-relaxed">
             회원가입 후 이메일로 인증 코드가 발송돼요.
           </p>
         )}
 
         {mode === 'signin' && (
-          <div className="flex items-center justify-center gap-3 text-[12px] text-subtle py-1">
-            <Link to="/find-password" className="hover:text-clay-700 underline-offset-4 hover:underline">
+          <div className="flex items-center justify-center gap-3 text-[14px] text-subtle py-1">
+            <Link to="/find-password" className="hover:text-gray-700 underline-offset-4 hover:underline">
               비밀번호 재설정
             </Link>
           </div>
         )}
 
         <div className="flex items-center gap-3 py-1">
-          <div className="flex-1 h-px bg-cream-200" />
-          <span className="text-[12px] text-subtle">또는</span>
-          <div className="flex-1 h-px bg-cream-200" />
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-[14px] text-subtle">또는</span>
+          <div className="flex-1 h-px bg-gray-200" />
         </div>
 
         <button
           onClick={handleGoogle}
           disabled={busy}
-          className="w-full flex items-center justify-center gap-2 bg-surface border border-cream-300 rounded-2xl py-3 px-5 text-[14px] font-semibold text-ink hover:bg-cream-50 disabled:opacity-50 transition"
+          className="w-full flex items-center justify-center gap-2 bg-surface border border-gray-300 rounded-2xl py-3 px-5 text-[15px] font-semibold text-ink hover:bg-gray-50 disabled:opacity-50 transition"
         >
           <GoogleIcon />
           Google로 계속하기
@@ -263,11 +262,11 @@ export function LoginScreen() {
 
         <button
           onClick={handleGuest}
-          className="w-full text-center text-[13px] text-subtle underline underline-offset-4 py-3"
+          className="w-full text-center text-[14px] text-subtle underline underline-offset-4 py-3"
         >
           로그인 없이 게스트로 시작
         </button>
-        <p className="text-center text-[11px] text-subtle -mt-1">
+        <p className="text-center text-[13px] text-subtle -mt-1">
           게스트 데이터는 이 기기에만 저장돼요.
         </p>
       </div>

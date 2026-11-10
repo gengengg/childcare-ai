@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from 'react';
-import { Mascot } from './Mascot';
+import { BrandMark } from './BrandMark';
 
 type Props = { children: ReactNode };
 type State = { error: Error | null };
@@ -27,12 +27,12 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div className="min-h-screen bg-cream-50 flex flex-col items-center justify-center px-6 py-10">
-          <Mascot variant="sleep" size={120} className="mb-6" />
+        <div className="min-h-screen bg-page flex flex-col items-center justify-center px-6 py-10">
+          <BrandMark tone="muted" size={120} className="mb-6" />
           <h1 className="text-[22px] font-extrabold text-ink mb-2 text-center">
-            앗! 햄찌가 잠깐 멈췄어요
+            앗! 잠깐 문제가 생겼어요
           </h1>
-          <p className="text-[14px] text-subtle text-center leading-relaxed mb-6 max-w-sm">
+          <p className="text-[15px] text-subtle text-center leading-relaxed mb-6 max-w-sm">
             예상치 못한 오류가 있었어요. 새로고침하면 다시 정상 동작합니다.
             <br />
             같은 문제가 반복되면 알려주세요.
@@ -45,10 +45,10 @@ export class ErrorBoundary extends Component<Props, State> {
           </button>
           {import.meta.env.DEV && (
             <details className="mt-8 max-w-md w-full">
-              <summary className="text-[12px] text-subtle cursor-pointer">
+              <summary className="text-[14px] text-subtle cursor-pointer">
                 개발자 정보 (dev only)
               </summary>
-              <pre className="text-[11px] text-red-500 mt-2 overflow-auto p-3 bg-cream-100 rounded-xl">
+              <pre className="text-[13px] text-red-500 mt-2 overflow-auto p-3 bg-gray-100 rounded-xl">
                 {this.state.error.message}
                 {'\n\n'}
                 {this.state.error.stack}

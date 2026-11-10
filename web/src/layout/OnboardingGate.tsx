@@ -34,7 +34,7 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
   }, [loc.pathname, nav]);
 
   if (!checked) {
-    return <div className="min-h-full bg-cream-50" />;
+    return <div className="min-h-full bg-page" />;
   }
   return <>{children}</>;
 }
